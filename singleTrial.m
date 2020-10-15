@@ -6,6 +6,7 @@ function response = singleTrial(wptr, rect, stimTexture)
 stimulus_onset = 2;
 blank_Interval = 2;
 fixSize = 10;
+fixColor = [255 255 255];
 [xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
 
 %% Response keys setting 
@@ -14,9 +15,9 @@ likeKey = KbName('f');
 disLikeKey = KbName('j'); % stop and exit
 escKey   = KbName('escape'); % stop and exit
     
-%% show the corresponding stimuli
+%% Show the corresponding stimuli
 Screen('DrawTexture', wptr, stimTexture);
-Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, [0 0 0]);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
 Screen('Flip',wptr);
 
 %% Run in single trail
@@ -44,7 +45,7 @@ while true
 end
 
 %% Show the fixation  
-Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, [0 0 0]);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
 Screen('Flip', wptr);
 WaitSecs(blank_Interval);    
 

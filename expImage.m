@@ -5,13 +5,8 @@ picsFolderName = 'Pics';
 outFolderName = 'out';
 stimulusFolder = 'SelectedImages';
 stimOrderFolder = 'stim';
-column_session = 2;
-column_run = 3;
-column_trail = 4;
-column_id = 5;
 imgPixel = 800;
 run_per_session = 10;
-trial_per_run = 128;
 
 %% Screen setting
 % Skip synIRF tests
@@ -20,16 +15,13 @@ Screen('Preference','VisualDebugLevel',4);
 Screen('Preference','SuppressAllWarnings',1);
 bkgColor = [128 128 128];
 [wptr, rect] = Screen('OpenWindow', 0, bkgColor);
-
-% close keyboard and cursor
-ListenChar(2);
+% close cursor
 HideCursor;
 
 %% Show the start image
-jpgFileName_Instruction = 'Instruction_Start.jpg';
-jpgPathName_Instruction = sprintf('%s/%s', picsFolderName, jpgFileName_Instruction);
-imgMat_Instruction = imread(jpgPathName_Instruction);
-Instruction(wptr, imgMat_Instruction);
+imgStart = sprintf('%s/%s', picsFolderName, 'Instruction_Start.jpg');
+startTexture = Screen('MakeTexture', wptr, imread(imgStart)); 
+Instruction(wptr, startTexture);
 
 %% Open a .txt file for saving the data
 outPath = sprintf('%s/sub%d', outFolderName, sub);
@@ -77,9 +69,9 @@ for runIndex = 1:run_per_session
     end
 
     % show the rest image
-    imgRestPath = sprintf('%s/%s', picsFolderName, 'Instruction_Rest.jpg');
-    imgRestMat = imread(imgRestPath);
-    Instruction(wptr, imgRestMat);
+    imgStart = sprintf('%s/%s', picsFolderName, 'Instruction_Rest.jpg');
+    restTexture = Screen('MakeTexture', wptr, imread(imgStart)); 
+    Instruction(wptr, restTexture);
     % using in debugging
     if strcmp(response, 'break')
         break;
@@ -87,16 +79,12 @@ for runIndex = 1:run_per_session
 end
     
 %% Show the end image 
-jpgFileName_Instruction = 'Instruction_Bye.jpg';
-jpgPathName_Instruction = sprintf('%s/%s', picsFolderName, jpgFileName_Instruction);
-imgMat_Instruction_Bye = imread(jpgPathName_Instruction);
-Instruction(wptr, imgMat_Instruction_Bye);
+imgEnd = sprintf('%s/%s', picsFolderName, 'Instruction_Bye.jpg');
+endTexture = Screen('MakeTexture', wptr, imread(imgEnd)); 
+Instruction(wptr, endTexture);
 
 % show cursor and close all
 ShowCursor;
-ListenChar(1);
 Screen('CloseAll');
-Priority(0);
-psychrethrow(psychlasterror);
 
 end
