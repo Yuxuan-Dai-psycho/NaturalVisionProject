@@ -1,11 +1,6 @@
 % the whole experiment 
 function expImage(sub, session)
-%if you get 'SYNCHORIZATION FAILURE',use these command to suppress warning
-Screen('Preference', 'SkipSyncTests', 2);
-Screen('Preference','VisualDebugLevel',4);
-Screen('Preference','SuppressAllWarnings',1);
-
-% prepare foldernames and params
+%% Prepare foldernames and params
 picsFolderName = 'Pics';
 outFolderName = 'out';
 stimulusFolder = 'SelectedImages';
@@ -18,31 +13,25 @@ imgPixel = 800;
 run_per_session = 10;
 trial_per_run = 128;
 
-try
-% load start image
-jpgFileName_Instruction = 'Instruction_Start.jpg';
-jpgPathName_Instruction = sprintf('%s/%s', picsFolderName, jpgFileName_Instruction);
-imgMat_Instruction = imread(jpgPathName_Instruction);
-
-% prepare color for background
+%% Screen setting
+% Skip synIRF tests
+Screen('Preference', 'SkipSyncTests', 2);
+Screen('Preference','VisualDebugLevel',4);
+Screen('Preference','SuppressAllWarnings',1);
 bkgColor = [128 128 128];
 [wptr, rect] = Screen('OpenWindow', 0, bkgColor);
 
-% 关闭键盘监听
+% close keyboard and cursor
 ListenChar(2);
-
-% 隐藏
 HideCursor;
 
-% show the instruction
+%% Show the start image
+jpgFileName_Instruction = 'Instruction_Start.jpg';
+jpgPathName_Instruction = sprintf('%s/%s', picsFolderName, jpgFileName_Instruction);
+imgMat_Instruction = imread(jpgPathName_Instruction);
 Instruction(wptr, imgMat_Instruction);
 
-% 准备好fixation的图像
-fixationFileName = 'fixation.jpg';
-fixationPathName = sprintf('%s/%s', picsFolderName, fixationFileName);
-fixation_imgMatrix = imread(fixationPathName);
-
-% open a .txt file for store the data
+%% Open a .txt file for saving the data
 outPath = sprintf('%s/sub%d', outFolderName, sub);
 if ~exist(outPath,'dir')
     mkdir(outPath);
@@ -51,13 +40,14 @@ txtFileName_Result = sprintf('%s/expImage_sub%d_session%d.txt', outPath, sub, se
 fid = fopen(txtFileName_Result, 'w+');
 fclose(fid);
 
-% start trail
+%% Run experiment: show stimui and wait response for each trial
 for runIndex = 1:run_per_session
     % load stimulus
     stimPath = sprintf('%s/sub%d/session%d/stim_run%d.mat', stimOrderFolder, sub, session, runIndex);
     stimStruct = load(stimPath);
     stimAll = stimStruct.stimAll;
-    % LOOP to present stimulus
+    % make stimuli texture
+    stimTexture = zeros(1,size(stimAll, 1));
     for trailIndex = 1:size(stimAll, 1) 
         picName = stimAll{trailIndex};
         if strcmp(picName, 'NA')
@@ -65,16 +55,19 @@ for runIndex = 1:run_per_session
         else
             imgPath = sprintf('%s/%s', stimulusFolder, picName);
         end
-        
-        imgMat = imread(imgPath);
-        imgResize = imresize(imgMat, [imgPixel imgPixel]);
-        response = singleTrial(wptr, fixation_imgMatrix, imgResize);
-        % 调试时使用
+        imgResize = imresize(imread(imgPath), [imgPixel imgPixel]);
+        stimTexture(trailIndex) = Screen('MakeTexture', wptr, imgResize);
+    end
+    
+     % loop to run the experiment
+     for trailIndex = 1:size(stimAll, 1) 
+        response = singleTrial(wptr, rect, stimTexture(trailIndex));
+        % using in debugging
         if strcmp(response, 'break')
             break;
         end
         
-        % write response info into table
+        % write response info into output txt
         tmpArr = [sub session runIndex trailIndex response];
         tmpLine = sprintf('%d,%d,%d,%d,%d,%s', tmpArr, picName);
 
@@ -83,44 +76,27 @@ for runIndex = 1:run_per_session
         fclose(fid);        
     end
 
-    % 显示休息的图片
+    % show the rest image
     imgRestPath = sprintf('%s/%s', picsFolderName, 'Instruction_Rest.jpg');
     imgRestMat = imread(imgRestPath);
-    % 等待被试按键继续
     Instruction(wptr, imgRestMat);
-    % 调试时使用
+    % using in debugging
     if strcmp(response, 'break')
         break;
     end
 end
     
-% filename
+%% Show the end image 
 jpgFileName_Instruction = 'Instruction_Bye.jpg';
 jpgPathName_Instruction = sprintf('%s/%s', picsFolderName, jpgFileName_Instruction);
 imgMat_Instruction_Bye = imread(jpgPathName_Instruction);
 Instruction(wptr, imgMat_Instruction_Bye);
 
-% 显示鼠标
+% show cursor and close all
 ShowCursor;
-
-% 关闭键盘监听
 ListenChar(1);
-
-% 关闭窗口
-Screen('CloseAll');
-
-catch
-    
-%显示鼠标
-ShowCursor;
-
-% 关闭键盘监听
-ListenChar(1);
-
-% 关闭窗口
 Screen('CloseAll');
 Priority(0);
 psychrethrow(psychlasterror);
 
-end
 end
