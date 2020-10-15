@@ -1,53 +1,52 @@
-function response = singleTrial(wptr, imgMatrix_Fixation, imgMat)
+function response = singleTrial(wptr, rect, stimTexture)
 % Define the keyboard and present images for single trail
 % F - like - 1  J - dislike - 0  None response - -1
 
-% prepare time parameters
+%% Prepare parameters for time and location
 stimulus_onset = 2;
 blank_Interval = 2;
+fixSize = 10;
+fixColor = [255 255 255];
+[xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
 
-% 设置按键的准备情况
+%% Response keys setting 
 KbName('UnifyKeyNames');
-
-% 准备好两个按键的指向
-KeyPressArray = [KbName('f') KbName('j')];      
-
-% show the corresponding stimuli
-Screen('PutImage',wptr, imgMat);
-Screen('PutImage',wptr, imgMatrix_Fixation);
+likeKey = KbName('f');
+disLikeKey = KbName('j'); % stop and exit
+escKey   = KbName('escape'); % stop and exit
+    
+%% Show the corresponding stimuli
+Screen('DrawTexture', wptr, stimTexture);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
 Screen('Flip',wptr);
 
-t0 = GetSecs;   %启动计时器
-
-while 1     %等待被试反应
-    [~, ~, key_Code] = KbCheck;      %监听按键
-    
-    % 如果按键为 f j 两个中的任意一个
-    if key_Code(KbName('f'))
+%% Run in single trail
+t0 = GetSecs;   
+while true     
+    [~, ~, key_Code] = KbCheck;      
+    % get response
+    if key_Code(likeKey)
         response = 1;
-    elseif key_Code(KbName('j'))
+    elseif key_Code(disLikeKey)
         response = 0;
     else 
         response = -1;
     end
-
-    % 如果按键为ESC 调试状态
-    if key_Code(KbName('ESCAPE')) 
+    % using in debug
+    if key_Code(escKey) 
         response = 'break';
         break;
     end
-    
-    %固定一段时间后图片消失
-    tt = GetSecs;   %启动计时器
+    % break after onset time
+    tt = GetSecs;   
     if tt-t0>stimulus_onset
         break
     end
-    
 end
 
-% show the fixation  
-Screen('PutImage',wptr, imgMatrix_Fixation);
-Screen('Flip',wptr);
+%% Show the fixation  
+Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
+Screen('Flip', wptr);
 WaitSecs(blank_Interval);    
 
 end

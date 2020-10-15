@@ -1,18 +1,20 @@
-function y = Instruction(p_window,InsPic)
+function Instruction(wptr,insTexture)
+% Define instruction images for start and end
+% Press space to continue
 
-Screen('PutImage',p_window, InsPic);
-Screen('Flip',p_window);
+Screen('DrawTexture', wptr, insTexture);
+Screen('Flip',wptr);
 
 key_Space=KbName('Space');
 while 1
-    [~, key_Code, ~]=KbWait([], 3);     %¼àÌý°´¼ü
+    [~, key_Code, ~]=KbWait([], 3);     
     if key_Code(key_Space)
         break;
     end
 end
 
-Screen('FillRect',p_window,[128 128 128]);  
-Screen('Flip',p_window);
+Screen('FillRect',wptr,[128 128 128]);  
+Screen('Flip',wptr);
 
 end
 
