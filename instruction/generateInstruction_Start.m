@@ -20,7 +20,7 @@ hText_Kaishi = uicontrol('style','text', 'String','指导语', 'fontname','Microsof
 tmpInstr = sprintf('这是一个图片观看任务，请你在看到一张图片的时候做出反应：\n如果你喜欢这张图片，请按左键 F ；\n如果你不喜欢这张图片，请按右键 J 。 ');
 hText_Content = uicontrol('style','text', 'String',tmpInstr, 'fontname','Microsoft Yahei', 'position',[101 150 600 300], 'fontsize',20,'backgroundcolor',bkgColor, 'HorizontalAlign','left', 'ForegroundColor',fontColor);
 
-tmpGo = '请按空格键开始正式实验。';
+tmpGo = '请按S键开始正式实验。';
 hText_Go = uicontrol('style','text', 'HorizontalAlign','center', 'String',tmpGo, 'fontname','Microsoft Yahei', 'position',[101 180 600 40], 'fontsize',20, 'Backgroundcolor',bkgColor, 'ForegroundColor',fontColor);
 
 % snapshot

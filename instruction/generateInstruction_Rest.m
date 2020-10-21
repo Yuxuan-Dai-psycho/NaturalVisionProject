@@ -20,7 +20,7 @@ hText_Kaishi = uicontrol('style','text', 'String','指导语', 'fontname','Microsof
 tmpInstr = sprintf('您现在有一段时间进行休息。 ');
 hText_Content = uicontrol('style','text', 'String',tmpInstr, 'fontname','Microsoft Yahei', 'position',[101 150 600 300], 'fontsize',20,'backgroundcolor',bkgColor, 'HorizontalAlign','center', 'ForegroundColor',fontColor);
 
-tmpGo = '请按空格键继续实验。';
+tmpGo = '请按S键继续实验。';
 hText_Go = uicontrol('style','text', 'HorizontalAlign','center', 'String',tmpGo, 'fontname','Microsoft Yahei', 'position',[101 180 600 40], 'fontsize',20, 'Backgroundcolor',bkgColor, 'ForegroundColor',fontColor);
 
 % snapshot

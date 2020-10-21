@@ -20,7 +20,7 @@ hText_Kaishi = uicontrol('style','text', 'String','实验结束', 'fontname','Micros
 tmpInstr = sprintf('感谢你的参与，去领取被试费吧！:) ');
 hText_Content = uicontrol('style','text', 'String',tmpInstr, 'fontname','Microsoft Yahei', 'position',[121 120 540 250], 'fontsize',20,'backgroundcolor',bkgColor, 'HorizontalAlign','center', 'ForegroundColor',fontColor);
 
-tmpGo = '请按空格键退出。';
+tmpGo = '请按S键退出。';
 hText_Go = uicontrol('style','text', 'HorizontalAlign','center', 'String',tmpGo, 'fontname','Microsoft Yahei', 'position',[101 100 600 50], 'fontsize',20, 'Backgroundcolor',bkgColor, 'ForegroundColor',fontColor);
 
 % snapshot

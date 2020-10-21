@@ -1,10 +1,7 @@
-function subject = ptbBrainImageNet()
 % Present ImageNet images for each category and get fMRI signal
 %
-% Inputs (necessary):
-%   
 
-% Version 1.4 2020/10/17
+% Version 1.4 2020/10/21
 % Department of Psychology, Beijing Normal University 
 
 % clear
@@ -27,11 +24,10 @@ subject.sessionID = str2double(input('Enter session id: ','s'));
 picsFolderName = 'instruction';
 outFolderName = 'out';
 stimulusFolder = 'stim/images';
-stimOrderFolder = 'stim/designMatrix';
+designMatrixMat = 'stim/BIN.mat';
 imgPixel = 800;
-run_per_session = 10;
-stimulus_onset = 2;
 blank_Interval = 2;
+run_per_session = 10;
 fixSize = 10;
 fixColor = [255 255 255];
 
@@ -75,27 +71,36 @@ while true
     end
 end
 
-%% Open a .txt file for saving the data
-outPath = sprintf('%s/sub%d', outFolderName, subject.subID);
-if ~exist(outPath,'dir')
-    mkdir(outPath);
-end
-txtFileName_Result = sprintf('%s/expImage_sub%d_session%d.txt', outPath, subject.subID, subject.sessionID);
-fid = fopen(txtFileName_Result, 'w+');
-fclose(fid);
-
 %% Run experiment: show stimui and wait response for each trial
+% load design matrix
+load(designMatrixMat);
+paradigmClass = BIN.paradigmClass;
+sessionLevel = 4*(subject.subID-1)+subject.sessionID;
+stimPerSession = paradigmClass{sessionLevel};
+resultPerSession = cell(run_per_session, 1);
+
+% loop to run the experiment
 for runIndex = 1:run_per_session
-    % load stimulus
-    stimPath = sprintf('%s/sub%d/session%d/stim_run%d.mat', stimOrderFolder, subject.subID, subject.sessionID, runIndex);
-    stimStruct = load(stimPath);
-    stimAll = stimStruct.stimAll;
+    % generate run stim matrix
+    tmpDelete = stimPerSession;
+    tmpDelete(find(strcmp(tmpDelete, 'NULL')), :) = [];
+    imageSeperate = tmpDelete{100, 1};
+    stimRow = find(strcmp(stimPerSession, imageSeperate));
+    if runIndex ~= run_per_session
+        stimRun = stimPerSession(1:stimRow,:);
+    else
+        stimRun = stimPerSession;
+    end
+    stimPerSession = stimPerSession((stimRow+1):size(stimPerSession,1),:);
+    % cantante null trail   
+    nullTrails = {'NULL', 16};
+    stimRun = cat(1, nullTrails, stimRun, nullTrails);
     % make stimuli texture
-    stimTexture = zeros(1,size(stimAll, 1));
-    for trailIndex = 1:size(stimAll, 1) 
-        picName = stimAll{trailIndex};
-        if strcmp(picName, 'NA')
-            imgPath = sprintf('%s/%s', picsFolderName, 'NA.jpg');
+    stimTexture = zeros(1,size(stimRun, 1));
+    for trailIndex = 1:size(stimRun, 1) 
+        picName = stimRun{trailIndex, 1};
+        if strcmp(picName, 'NULL')
+            imgPath = sprintf('%s/%s', picsFolderName, 'NULL.jpg');
         else
             imgPath = sprintf('%s/%s', stimulusFolder, picName);
         end
@@ -104,45 +109,52 @@ for runIndex = 1:run_per_session
     end
     
      % loop to run the experiment
-     for trailIndex = 1:size(stimAll, 1) 
-   
+     responseArr = cell(size(stimRun, 1), 2);
+     for trailIndex = 1:size(stimRun, 1) 
+        picName = stimRun{trailIndex, 1};
+        stimDur = stimRun{trailIndex, 2};
         % Show the corresponding stimuli
         Screen('DrawTexture', wptr, stimTexture(trailIndex));
         Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
         tStart = Screen('Flip',wptr);   
         
         % Wait response
+        pressTime = 0;
+        response = -1;
+        RT = stimDur;
         while KbCheck(), end % empty the key buffer
-        while GetSecs - tStart < stimulus_onset
-            [~, ~, keyCode] = KbCheck();
-            
-            if keyCode(escKey), response = 'break'; break;
-            elseif keyCode(likeKey),   response = 1;
-            elseif keyCode(disLikeKey), response = 0;
-            else, response = -1;
+        while GetSecs - tStart < stimDur-blank_Interval
+            [keyIsDown, tEnd, keyCode] = KbCheck();
+            if keyIsDown
+                if pressTime < 1
+                    if keyCode(escKey), response = 'break'; break;
+                    elseif keyCode(likeKey),   response = 1; RT = tEnd-tStart;
+                    elseif keyCode(disLikeKey), response = 0; RT = tEnd-tStart;
+                    end
+                end
+                pressTime = pressTime + 1;
             end
-                
-        end   
-        
-        % Show the fixation  
-        Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
-        Screen('Flip', wptr);
-        WaitSecs(blank_Interval);    
-        
+        end
+        % record response
+        responseArr{trailIndex, 1} = response;
+        responseArr{trailIndex, 2} = RT ;
+            
         % using in debugging
         if strcmp(response, 'break')
             break;
         end
         
-        % write response info into output txt
-        tmpArr = [subject.subID subject.sessionID trailIndex response];
-        tmpLine = sprintf('%d,%d,%d,%d,%d,%s', tmpArr, picName);
-
-        fid = fopen(txtFileName_Result, 'a+');
-        fprintf(fid, '%s\r\n', tmpLine);
-        fclose(fid);        
+        % Show blank interval
+        if ~strcmp(picName, 'NULL')
+            Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
+            Screen('Flip', wptr);
+            WaitSecs(blank_Interval);           
+        end
     end
-
+    % write response info result mat
+    resultPerRun = cat(2, stimRun, responseArr);
+    resultPerSession{runIndex} = resultPerRun;
+       
     % Show rest instruction
     Screen('DrawTexture', wptr, restTexture);
     Screen('Flip', wptr);
@@ -159,9 +171,13 @@ for runIndex = 1:run_per_session
 end
 
 %% Save data
-% outFile = fullfile('data',sprintf('%s_%s_stroop.mat',subject.name,task.date));
-% fprintf('Test data were saved to: %s\n',outFile);
-% save(outFile,'subject','task');
+outPath = sprintf('%s/sub%02d', outFolderName, subject.subID);
+if ~exist(outPath,'dir')
+    mkdir(outPath);
+end
+fprintf('Data were saved to: %s\n',outPath);
+outName = sprintf('%s/session%02d.mat', outPath, subject.sessionID);
+save(outName,'resultPerSession');
 
 %% Show end instruction
 Screen('DrawTexture', wptr, endTexture);
@@ -176,5 +192,3 @@ end
 % show cursor and close all
 ShowCursor;
 Screen('CloseAll');
-
-end
