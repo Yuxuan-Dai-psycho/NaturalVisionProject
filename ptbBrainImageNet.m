@@ -125,10 +125,6 @@ for runIndex = 1:10
     responseArr = cell(100, 3);
     trailIndex = 1;
     while 1
-        % show fixation for all time
-        Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
-        Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
-        Screen('Flip', wptr);
         % show stimulus at the right time
         stimOnsetSingle = stimOnset(trailIndex, 1);
         tCurrent = floor(GetSecs - tStart);
