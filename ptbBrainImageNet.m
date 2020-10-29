@@ -8,21 +8,16 @@
 clc; clear; close all;
 
 %% Subject registration
-% Set subject id
-subject.subID = str2double(input('Enter subject id: ','s'));
- if subject.subID > 20
-     error('Please check your subject id!');
- end
-
- % Set session id
-subject.sessionID = str2double(input('Enter session id: ','s'));
- if subject.sessionID > 4
-     error('Please check your session id!');
- end
-
- % Set angle
+% Input subject info and params
+subID = str2double(input('Enter subject id: ','s'));
+sessID = str2double(input('Enter session id: ','s'));
+runID = str2double(input('Enter run id: ','s'));
 imgAngle = str2double(input('Enter img angle: ','s'));
 fixAngle = str2double(input('Enter fixation angle: ','s'));
+% Check input
+if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
+if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!'); end
+if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 
 %% Prepare foldernames and params
 picsFolderName = 'instruction';
@@ -44,8 +39,8 @@ fixPixelHor = pixelPerMilimeterHor * (2 * 1000 * tan(fixAngle/180*pi/2));
 PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 insKey = KbName('s');
-likeKey = KbName('f');
-disLikeKey = KbName('j'); 
+likeKey = KbName('1');
+disLikeKey = KbName('3'); 
 escKey = KbName('escape'); % stop and exit
 
 %% Screen setting
@@ -63,15 +58,13 @@ HideCursor;
 %% Create instruction texture
 % Makes instruction texture  
 imgStart = sprintf('%s/%s', picsFolderName, 'instructionStart.jpg');
-imgWait = sprintf('%s/%s', picsFolderName, 'instructionWait.jpg');
 imgRest = sprintf('%s/%s', picsFolderName, 'instructionRest.jpg');
 imgEnd = sprintf('%s/%s', picsFolderName, 'instructionBye.jpg');
 startTexture = Screen('MakeTexture', wptr, imread(imgStart)); 
-waitTexture = Screen('MakeTexture', wptr, imread(imgWait)); 
 restTexture = Screen('MakeTexture', wptr, imread(imgRest)); 
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd)); 
 
-%% Show start and wait instruction
+%% Show start instruction
 Screen('DrawTexture', wptr, startTexture);
 Screen('Flip', wptr);
 while KbCheck(); end
@@ -81,124 +74,102 @@ while true
     end
 end
 
-Screen('DrawTexture', wptr, waitTexture);
-Screen('Flip', wptr);
-while KbCheck(); end
-while true
-    [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && keyCode(insKey), break;
-    end
-end
 %% Run experiment: show stimui and wait response for each trial
-% load design matrix
+% Load design matrix
 load(designMatrixMat);
 paradigmClass = BIN.paradigmClass;
-sessionLevel = 4*(subject.subID-1)+subject.sessionID;
-%allocate 1000 trails into 10 run
+paradigmSuperClass = BIN.paradigmSuperClass;
+classID = BIN.classID;
+sessionLevel = 4*(subID-1)+sessID;
+% get matrix info
 paradigmClassReshape = reshape(paradigmClass(:,sessionLevel,:), 100, 10, 3);
-stimOnsetAll = paradigmClassReshape(:,:, 1);
-stimAll = paradigmClassReshape(:,:, 2);
-resultPerSession = cell(10, 1);
-% loop to run the experiment
-for runIndex = 1:10
-    % prepare stim name and onset
-    stimRun = stimAll(:, runIndex);
-    stimOnset = cell2mat(stimOnsetAll(:, runIndex)); 
-    stimOnset = stimOnset - stimOnset(1,1); %substract the first time
-    % make stimuli texture
-    stimTexture = zeros(1,100);
-    for trailIndex = 1:100
-        picName = stimRun{trailIndex, 1};
-        picClass = regexp(picName, '_', 'split');
-        imgPath = sprintf('%s/%s/%s', stimulusFolder, picClass{1}, picName);
-        imgResize = imresize(imread(imgPath), [imgPixelHor imgPixelVer]);
-        stimTexture(trailIndex) = Screen('MakeTexture', wptr, imgResize);
-    end
-    % show null trials before stimulus
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
-    Screen('Flip', wptr);
-    WaitSecs(nullBlank);    
+paradigmSuperClassReshape = reshape(paradigmSuperClass(:,sessionLevel,:), 100, 10, 3);
+stimOnset = cell2mat(paradigmClassReshape(:, runID, 1));
+stimOnset = stimOnset - stimOnset(1,1); %substract the first time
+stimImgCondition = paradigmClassReshape(:, runID, 2);
+stimSuperCondition = paradigmSuperClassReshape(:, runID, 2);
+responseArr = cell(100, 7);% seven columns: onset, superCondition, classCondition, imgCondition, actualOnset, response, RT
+responseArr(:, 1) = num2cell(stimOnset);
+responseArr(:, 2) = num2cell(stimSuperCondition);
+responseArr(:, 3) = stimImgCondition;
+% Make stimuli texture
+stimTexture = zeros(1,100);
+for trailIndex = 1:100
+    picName = stimImgCondition{trailIndex, 1};
+    picClass = regexp(picName, '_', 'split');
+    imgPath = sprintf('%s/%s/%s', stimulusFolder, picClass{1}, picName);
+    imgResize = imresize(imread(imgPath), [imgPixelHor imgPixelVer]);
+    stimTexture(trailIndex) = Screen('MakeTexture', wptr, imgResize);
+    responseArr{trailIndex, 4} = find(strcmp(picClass{1}, classID));
+end
+% show null trials before stimulus
+Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
+Screen('Flip', wptr);
+WaitSecs(nullBlank);    
   
-    % start the experiment
-    tStart = GetSecs;
-    responseArr = cell(100, 3);
-    trailIndex = 1;
-    while 1
-        % show stimulus at the right time
-        stimOnsetSingle = stimOnset(trailIndex, 1);
-        tCurrent = floor(GetSecs - tStart);
-        if tCurrent == stimOnsetSingle          
-            % ON Trail
-            Screen('DrawTexture', wptr, stimTexture(trailIndex));
-            Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
-            Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
-            Screen('Flip', wptr);
-            WaitSecs(stimTrailON);    
-            % OFF Trail & Record response
-            Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
-            Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
-            tBlank = Screen('Flip', wptr);
-            % Wait response
-            pressTime = 0;
-            response = -1;
-            RT = 2;
-            while KbCheck(), end % empty the key buffer
-            while GetSecs - tBlank < 4-stimTrailON
-                [keyIsDown, tEnd, keyCode] = KbCheck();
-                if keyIsDown
-                    if pressTime < 1
-                        if keyCode(escKey), response = 'break'; break;
-                        elseif keyCode(likeKey),   response = 1; RT = tEnd-tBlank;
-                        elseif keyCode(disLikeKey), response = 0; RT = tEnd-tBlank;
-                        end
+% start the experiment
+tStart = GetSecs;
+trailIndex = 1;
+while 1
+    % show stimulus at the right time
+    stimOnsetSingle = stimOnset(trailIndex, 1);
+    tCurrent = GetSecs - tStart;
+    if floor(tCurrent) == stimOnsetSingle          
+        % ON Trail
+        Screen('DrawTexture', wptr, stimTexture(trailIndex));
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
+        Screen('Flip', wptr);
+        WaitSecs(stimTrailON);    
+        % OFF Trail & Record response
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
+        tBlank = Screen('Flip', wptr);
+        % Wait response
+        pressTime = 0;
+        response = -1;
+        RT = 2;
+        while KbCheck(), end % empty the key buffer
+        while GetSecs - tBlank < 4-stimTrailON
+            [keyIsDown, tEnd, keyCode] = KbCheck();
+            if keyIsDown
+                if pressTime < 1
+                    if keyCode(escKey), response = 'break'; break;
+                    elseif keyCode(likeKey),   response = 1; RT = tEnd-tBlank;
+                    elseif keyCode(disLikeKey), response = 0; RT = tEnd-tBlank;
                     end
-                    pressTime = pressTime + 1;
                 end
+                pressTime = pressTime + 1;
             end
-            % record response
-            responseArr{trailIndex, 1} = tCurrent;
-            responseArr{trailIndex, 2} = response;
-            responseArr{trailIndex, 3} = RT ;            
-            trailIndex = trailIndex+1;% Move on trail
         end
-        % using in debugging
-        if strcmp(response, 'break')
-            break;
-        end
-        if trailIndex > 100, break, end %break after 100 trails
+        % record response
+        responseArr{trailIndex, 5} = tCurrent;
+        responseArr{trailIndex, 6} = response;
+        responseArr{trailIndex, 7} = RT ;            
+        trailIndex = trailIndex+1;% Move on trail
     end
-    
-    % write response info result mat
-    resultPerSession{runIndex} = cat(2, stimRun, responseArr);
     % using in debugging
     if strcmp(response, 'break')
         break;
     end
-    % show null trials after stimulus
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
-    Screen('Flip', wptr);
-    WaitSecs(nullBlank);    
-    % Show rest instruction
-    Screen('DrawTexture', wptr, restTexture);
-    Screen('Flip', wptr);
-    while KbCheck(); end
-    while true
-        [keyIsDown,~,keyCode] = KbCheck();
-        if keyIsDown && keyCode(insKey), break;
-        end
-    end
+    if trailIndex > 100, break, end %break after 100 trails
 end
 
+% show null trials after stimulus
+Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
+Screen('Flip', wptr);
+WaitSecs(nullBlank);    
+
 %% Save data
-outPath = sprintf('%s/sub%02d', outFolderName, subject.subID);
+outPath = sprintf('%s/sub%02d', outFolderName, subID);
 if ~exist(outPath,'dir')
     mkdir(outPath);
 end
 fprintf('Data were saved to: %s\n',outPath);
-outName = sprintf('%s/session%02d.mat', outPath, subject.sessionID);
-save(outName,'resultPerSession');
+outName = sprintf('%s/session%02d_run%02d.mat', outPath, sessID, runID);
+save(outName,'responseArr');
 
 %% Show end instruction
 Screen('DrawTexture', wptr, endTexture);
