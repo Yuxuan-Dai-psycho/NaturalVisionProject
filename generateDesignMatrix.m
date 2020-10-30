@@ -1,105 +1,73 @@
 % This file is to generate design matrix
-%% Generate stimulus matrix
-clear;clc
-% load data
-stimulus = {};
-superClassMappingPath = 'stimulus.csv';
-stimAll = readtable(superClassMappingPath, 'Delimiter', ',');
+% Organize both stimulus image and stimulus order information into
+% BrainImageNet(BIN) structure
 
-for sub = 1:20
-    for session = 1:4
-        matrix = stimAll(stimAll{:,1}==sub & stimAll{:,2}==session, :);
-        stimID = matrix{:,3};
-        stimulus = [stimulus stimID];
-    end
+%% Directory setting
+stimDir =  '/nfs/e1/BrainImageNet/stim';
+imgDir = fullfile(stimDir,'images');
+designDir = fullfile(stimDir,'designMatrix');
+
+%% Load super class  
+% read super class info
+fid = fopen(fullfile(designDir,'superClassMapping.csv'));
+C = textscan(fid, '%s %d %s %d','Headerlines',1, 'Delimiter',',');
+fclose(fid);
+classID = C{1};
+superClassID = C{2}; 
+className = C{3}; 
+
+%% Organize stimulus according to the super class info 
+stimulus = cell(1000,80);
+for i = 1:length(classID) % class loop
+    imageName = dir(fullfile(imgDir,classID{i})); 
+    imageName = extractfield(imageName(3:end), 'name');
+    stimulus(i,:) = imageName(randperm(length(imageName)));
+    imageName = [];
 end
 
-%save mat
-save('stimulus.mat', 'stimulus')
+%% Load optseq of super class 
+optSeqSuperClass = NaN(1000,80,3);
+for s = 1:80 % session loop
+    % read par from optseq
+    optSeqSuperClassFile = fullfile(designDir,'ExpsessionorderTR1',...
+        sprintf('BIN-static-session-%03d.csv',s));
+    fid = fopen(optSeqSuperClassFile);
+    optSeq = textscan(fid, '%d %d %d %d %s');
+    fclose(fid);
 
-%% Generate optseq superclass matrix
-clear;clc
-% define path
-optSeqSuperClass = cell(80,1);
-optSeqFolder = 'ExpsessionorderTR1';
-
-for sessionLevel = 1:80
-    optSeqSuperClassName = sprintf('%s/BIN-static-session-%03d.csv', optSeqFolder, sessionLevel);
-    optSeqRaw = readtable(optSeqSuperClassName);
-    optSeq = optSeqRaw{:,[2,3]};
-    optSeqSuperClass{sessionLevel} = optSeq;
+    % remove null event and assemble optSeqSuperClass
+    optSeq = cell2mat(optSeq(1:3));
+    optSeq = optSeq(optSeq(:,2) ~= 0,:);
+    d(s) = length(optSeq);
+    optSeqSuperClass(:,s,:) = optSeq;
+    optSeq = [];
 end
 
-%save mat
-save('optSeqSuperClass.mat', 'optSeqSuperClass')
+%% Translate superClass optSeq to class optSeq
+optSeqClass = NaN(size(optSeqSuperClass));
+optSeqClass(:,:,[1,3]) = optSeqSuperClass(:,:,[1,3]);
+optSeqClass = num2cell(optSeqClass);
 
-%% Generate optseq class matrix
-clear;clc
-optSeqClass = cell(80,1);
-load('optSeqSuperClass.mat');
-load('stimulus.mat');
-
-superClassMappingPath = 'superClassMapping.csv';
-classMapping = readtable(superClassMappingPath, 'Delimiter', ',');
-classMapping{:, 2} = classMapping{:, 2} + 1;
-
-for sessionLevel = 1:size(optSeqSuperClass, 1)
-    % load session level class and super class
-    classMappingSingle = table2cell(classMapping);
-    optSeqSuperClassPerSession = optSeqSuperClass{sessionLevel, 1};
-    optSeqClassPerSession = num2cell(optSeqSuperClassPerSession);
-    stimulusPerSession = stimulus(:, sessionLevel);
-    stimulusPerSessionClassName = cell(size(stimulusPerSession));
-    for trail  = 1:size(stimulusPerSession, 1)
-       imageID =  stimulusPerSession{trail, 1};
-       imageSplit = regexp(imageID, '/', 'split');
-       stimulusPerSessionClassName{trail, 1} = imageSplit{1};
+for s = 1:80 % session loop
+    for c = 1:30 % class loop
+        superClassTrial = optSeqSuperClass(:,s,2) == c;
+        classTrail = find(superClassID == c); 
+        classTmpID = classID(classTrail);
+        optSeqClass(superClassTrial,s,2) = classTmpID(randperm(length(classTmpID))) ;
     end
-    % replace super class with class id in class cell
-    for trailLevel = 1:size(optSeqSuperClassPerSession, 1)
-        superClass = optSeqSuperClassPerSession(trailLevel, 1);
-        if superClass == 0
-            optSeqClassPerSession{trailLevel, 1} = 'NULL';
-        else
-            % random pick one image
-            classCorr = classMappingSingle(cell2mat(classMappingSingle(:, 2)) == superClass, 1);
-            randomPick = randperm(size(classCorr,1), 1);
-            classID = classCorr{randomPick,1};
-            classDeleteRow = find(strcmp(classMappingSingle(:, 1), classID));
-            classMappingSingle(classDeleteRow, :) = [];
-            % Add imageID in the cell
-            imageRow = find(strcmp(stimulusPerSessionClassName, classID));
-            imageID = stimulusPerSession{imageRow,1};
-            optSeqClassPerSession{trailLevel, 1} = imageID;           
-        end
-    end
-    optSeqClass{sessionLevel} = optSeqClassPerSession;
+    stimulusPerSession = stimulus(:,s);
+    for i = 1:1000 %image loop
+        optSeqClass{i,s,2} = stimulusPerSession{contains(stimulusPerSession, optSeqClass{i,s,2})};       
+    end    
 end
 
-% save mat
-save('optSeqClass.mat', 'optSeqClass');
-
-%% Generate BrainImageNet struct
-clear;clc
-% load mat
-load('optSeqSuperClass.mat');
-load('optSeqClass.mat');
-load('stimulus.mat');
-load('superClassName.mat');
-
-superClassMappingPath = 'superClassMapping.csv';
-classMapping = readtable(superClassMappingPath, 'Delimiter', ',');
-classMapping{:, 2} = classMapping{:, 2} + 1;
-classMappingCell = table2cell(sortrows(classMapping, 'Var4'));
-className = classMappingCell(:, 3);
-superClass = classMappingCell(:, 2);
-
-% construct BIN struct
-BIN = struct();
+%% Pack and save BIN strcture
+superClassNamePath = fullfile(stimDir,'designMatrix/superClassName.mat');
+load(superClassNamePath);
 BIN.desp = 'BrainImageNet session-level paradigm';
-BIN.className = className;
+BIN.classID = classID;
 BIN.superClassName = superClassName;
-BIN.superClass = superClass;
+BIN.superClassID = superClassID;
 BIN.stimulus = stimulus;
 BIN.paradigmSuperClass = optSeqSuperClass;
 BIN.paradigmClass = optSeqClass;
