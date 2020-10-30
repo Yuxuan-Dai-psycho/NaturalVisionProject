@@ -91,16 +91,16 @@ stimSuperCondition = paradigmSuperClassReshape(:, runID, 2);
 responseArr = cell(100, 7);% seven columns: onset, superCondition, classCondition, imgCondition, actualOnset, response, RT
 responseArr(:, 1) = num2cell(stimOnset);
 responseArr(:, 2) = num2cell(stimSuperCondition);
-responseArr(:, 3) = stimImgCondition;
+responseArr(:, 4) = stimImgCondition;
 % Make stimuli texture
 stimTexture = zeros(1,100);
-for trailIndex = 1:100
-    picName = stimImgCondition{trailIndex, 1};
+for trail = 1:100
+    picName = stimImgCondition{trail, 1};
     picClass = regexp(picName, '_', 'split');
     imgPath = sprintf('%s/%s/%s', stimulusFolder, picClass{1}, picName);
     imgResize = imresize(imread(imgPath), [imgPixelHor imgPixelVer]);
-    stimTexture(trailIndex) = Screen('MakeTexture', wptr, imgResize);
-    responseArr{trailIndex, 4} = find(strcmp(picClass{1}, classID));
+    stimTexture(trail) = Screen('MakeTexture', wptr, imgResize);
+    responseArr{trail, 3} = find(strcmp(picClass{1}, classID));
 end
 % show null trials before stimulus
 Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
@@ -110,14 +110,14 @@ WaitSecs(nullBlank);
   
 % start the experiment
 tStart = GetSecs;
-trailIndex = 1;
+trail = 1;
 while 1
     % show stimulus at the right time
-    stimOnsetSingle = stimOnset(trailIndex, 1);
+    stimOnsetSingle = stimOnset(trail, 1);
     tCurrent = GetSecs - tStart;
     if floor(tCurrent) == stimOnsetSingle          
         % ON Trail
-        Screen('DrawTexture', wptr, stimTexture(trailIndex));
+        Screen('DrawTexture', wptr, stimTexture(trail));
         Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
         Screen('Flip', wptr);
@@ -144,23 +144,25 @@ while 1
             end
         end
         % record response
-        responseArr{trailIndex, 5} = tCurrent;
-        responseArr{trailIndex, 6} = response;
-        responseArr{trailIndex, 7} = RT ;            
-        trailIndex = trailIndex+1;% Move on trail
+        responseArr{trail, 5} = tCurrent;
+        responseArr{trail, 6} = response;
+        responseArr{trail, 7} = RT ;            
+        trail = trail+1;% Move on trail
     end
     % using in debugging
     if strcmp(response, 'break')
         break;
     end
-    if trailIndex > 100, break, end %break after 100 trails
+    if trail > 100, break, end %break after 100 trails
 end
 
 % show null trials after stimulus
-Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
-Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
-Screen('Flip', wptr);
-WaitSecs(nullBlank);    
+if ~strcmp(response, 'break')
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor+5, [50 50 50], [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixPixelHor, fixColor, [], 2);
+    Screen('Flip', wptr);
+    WaitSecs(nullBlank);
+end
 
 %% Save data
 outPath = sprintf('%s/sub%02d', outFolderName, subID);
