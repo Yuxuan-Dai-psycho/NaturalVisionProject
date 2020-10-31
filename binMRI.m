@@ -1,4 +1,4 @@
-function trial = binBrainImageNet_zzl(subID,sessID,runID)
+function trial = binMRI(subID,sessID,runID)
 % function [subject,task] = binMRI(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
 % subID, subjet ID, integer[1-20] 
@@ -11,9 +11,6 @@ function trial = binBrainImageNet_zzl(subID,sessID,runID)
 % if nargin < 1, runID = 1; end
 
 %% Check subject information
-% subID = 1;
-% sessID = 1;
-% runID = 1;
 imgAngle = 12;
 fixAngle = 0.2;
 % Check subject id
@@ -70,9 +67,11 @@ HideCursor;
 % Makes instruction texture
 picsFolderName = 'instruction';
 imgStart = sprintf('%s/%s', picsFolderName, 'instructionStart.jpg');
+imgReady = sprintf('%s/%s', picsFolderName, 'instructionReady.jpg');
 imgEnd = sprintf('%s/%s', picsFolderName, 'instructionBye.jpg');
 
 startTexture = Screen('MakeTexture', wptr, imread(imgStart));
+readyTexture = Screen('MakeTexture', wptr, imread(imgReady));
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
 
 %% Load design matrix
@@ -110,6 +109,17 @@ end
 %% Show instruction
 Screen('DrawTexture', wptr, startTexture);
 Screen('Flip', wptr);
+% Wait ready signal from subject
+while KbCheck(); end
+while true
+    [keyIsDown,~,keyCode] = KbCheck();
+    if keyIsDown && keyCode(likeKey), break;
+    end
+end
+
+Screen('DrawTexture', wptr, readyTexture);
+Screen('Flip', wptr);
+
 % Wait trigger(S key) to begin the test
 while KbCheck(); end
 while true
@@ -120,28 +130,28 @@ while true
 end
 
 %% Run experiment
-onDur = 2; % on duration for a stimulus
+flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
+onDur = 2 - 0.5*flipInterval; % on duration for a stimulus
 offDur = 2; % off duration for a stimulus
 runDur = 476; % duration for a run
-beginDur = 2; % beigining fixation duration
+beginDur = 16; % beigining fixation duration
 endDur = 16; % ending fixation duration
 fixColor = [255 255 255];
 
 % Show begining fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
-tFix = Screen('Flip',wptr);
+Screen('Flip',wptr);
 WaitSecs(beginDur);
 
+tStart = GetSecs;
 % Show stimulus
-for t = 1:5
+for t = 1:nStim
     % Show stimulus with fixation
-    tStart = GetSecs;
     Screen('DrawTexture', wptr, stimTexture(t));
     Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
     tStim = Screen('Flip',wptr);
     trial(t, 6) = tStim - tStart;
-    flipInterval = Screen('GetFlipInterval', wptr);
-    while GetSecs - tStim < onDur - 0.5*flipInterval
+    while GetSecs - tStim < onDur 
         [~, ~, keyCode] = KbCheck();
         if keyCode(escKey), sca; return; end
     end
@@ -171,7 +181,7 @@ for t = 1:5
         tEnd = runDur;
     end  
     
-    while GetSecs - tStim < tEnd - trial(t,1)
+    while GetSecs - tStart < tEnd
         [~, ~, keyCode] = KbCheck();
         if keyCode(escKey), sca; return; end
     end
@@ -202,7 +212,7 @@ if ~exist(sessDir,'dir')
     mkdir(sessDir)
 end
 fileName = fullfile(sessDir, ...
-    sprintf('sub%02d_sess%02d_run%2d.mat',subID,sessID, runID));
+    sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
 fprintf('Data were saved to: %s\n',fileName);
 save(fileName,'trial');
 
