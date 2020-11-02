@@ -33,9 +33,11 @@ workDir = 'D:\fMRI\BrainImageNet\stim';
 stimDir = fullfile(workDir,'images');
 designDir = fullfile(workDir,'designMatrix');
 dataDir = fullfile(workDir,'data');
+if ~exist(dataDir,'dir')
+    mkdir(dataDir)
+end
 
 %% Prepare params
-
 % compute image pixel
 pixelPerMilimeterHor = 1024/390;
 pixelPerMilimeterVer = 768/295;
@@ -137,6 +139,7 @@ runDur = 476; % duration for a run
 beginDur = 16; % beigining fixation duration
 endDur = 16; % ending fixation duration
 fixColor = [255 255 255];
+tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
 
 % Show begining fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
@@ -151,14 +154,10 @@ for t = 1:nStim
     Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
     tStim = Screen('Flip',wptr);
     trial(t, 6) = tStim - tStart;
-    while GetSecs - tStim < onDur 
-        [~, ~, keyCode] = KbCheck();
-        if keyCode(escKey), sca; return; end
-    end
     
     % Show begining fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
-    tFix = Screen('Flip',wptr);
+    tFix = Screen('Flip', wptr, tStim + onDur);
     
     while KbCheck(), end % empty the key buffer
     while GetSecs - tFix < offDur
@@ -174,20 +173,12 @@ for t = 1:nStim
         end
     end
     
-    % Wait for the end of this trial
-    if t < nStim
-        tEnd = trial(t+1,1);   
-    else
-        tEnd = runDur;
-    end  
-    
-    while GetSecs - tStart < tEnd
+    % wait until tEnd
+    while GetSecs - tStart < tEnd(t)
         [~, ~, keyCode] = KbCheck();
         if keyCode(escKey), sca; return; end
-    end
-    
+    end    
 end
-
 
 % Wait ending fixation
 WaitSecs(endDur);
@@ -196,7 +187,6 @@ WaitSecs(endDur);
 Screen('DrawTexture', wptr, endTexture);
 Screen('Flip', wptr);
 WaitSecs(2);
-
 
 % show cursor and close all
 ShowCursor;
@@ -215,8 +205,5 @@ fileName = fullfile(sessDir, ...
     sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
 fprintf('Data were saved to: %s\n',fileName);
 save(fileName,'trial');
-
-
-
 
 

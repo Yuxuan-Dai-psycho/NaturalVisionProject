@@ -3,6 +3,8 @@ Brain imaging data for ImageNet
 
 ## Instructions
 -----------------------------------
-1. Add the whole image dataset in the folder 'stim' with name "images".
-2. Run ptbBrainImageNet.m to start the whole experiment. You need to enter subject id and session id.
-3. Each row of result cell means 'imageID, trailDuration, response, reactionTime'. The response means(1-like, 0-dislike, -1-None response)
+1. Download the dataset in the server: /nfs/e1/BrainImageNet/stim; Two folder：{images} & {DesignMatrix}
+    Modify the workDir in binMRI.m(line 32) in your own computer.
+    Remember stimDir and designDir are under workDir or you can change them by your own habbit.
+2. Run binMRI.m to start the whole experiment. You need to enter the function with parameters(subID, sessID, runID).
+3. When start instruction is onset, you need to press likeKey('F') to start. After that, the ready instruciton is onset and you need to press startKey('S') to start the experiment.
