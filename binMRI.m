@@ -12,7 +12,8 @@ function trial = binMRI(subID,sessID,runID)
 
 %% Check subject information
 imgAngle = 12;
-fixAngle = 0.2;
+fixOuterAngle = 0.3;
+fixInnerAngle = 0.2;
 % Check subject id
 if ~ismember(subID, 1:20)
     warning ('subID is a integer within [1:20]!');
@@ -43,7 +44,8 @@ pixelPerMilimeterHor = 1024/390;
 pixelPerMilimeterVer = 768/295;
 imgPixelHor = pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2));
 imgPixelVer = pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2));
-fixSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixAngle/180*pi/2));
+fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
+fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
 
 %% Response keys setting
 PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
@@ -138,11 +140,13 @@ offDur = 2; % off duration for a stimulus
 runDur = 476; % duration for a run
 beginDur = 16; % beigining fixation duration
 endDur = 16; % ending fixation duration
-fixColor = [255 255 255];
+fixOuterColor = [0 0 0]; % color of fixation circular ring
+fixInnerColor = [255 255 255]; % color of fixation circular point
 tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
 
 % Show begining fixation
-Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
 
@@ -151,12 +155,14 @@ tStart = GetSecs;
 for t = 1:nStim
     % Show stimulus with fixation
     Screen('DrawTexture', wptr, stimTexture(t));
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     tStim = Screen('Flip',wptr);
     trial(t, 6) = tStim - tStart;
     
     % Show begining fixation
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, fixColor, [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     tFix = Screen('Flip', wptr, tStim + onDur);
     
     while KbCheck(), end % empty the key buffer
