@@ -8,16 +8,15 @@ stimDir =  'D:\fMRI\BrainImageNet\stim';
 imgDir = fullfile(stimDir,'images');
 designDir = fullfile(stimDir,'designMatrix');
 
-
 %% Load super class  
 % read super class info
 fid = fopen(fullfile(designDir,'superClassMapping.csv'));
-C = textscan(fid, '%s %d %s %d','Headerlines',1, 'Delimiter',',');
+C = textscan(fid, '%s %d %s %s','Headerlines',1, 'Delimiter',',');
 fclose(fid);
 classID = C{1};
 superClassID = C{2};
 className = C{3}; 
-superClassName = []; 
+superClassName = unique(C{4}, 'stable'); 
 
 nClass = 1000; 
 nSuperClass = 30;
@@ -70,7 +69,6 @@ seq = repmat(seq, [10 1]);
 for s = 1:nSession
     optSeqClass(:,s,1) = seq;
 end
-
 
 %% Pack and save BIN strcture
 BIN.desp = 'BrainImageNet session-level paradigm';
