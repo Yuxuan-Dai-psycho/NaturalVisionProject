@@ -11,9 +11,6 @@ function trial = binMRI(subID,sessID,runID)
 % if nargin < 1, runID = 1; end
 
 %% Check subject information
-imgAngle = 12;
-fixOuterAngle = 0.3;
-fixInnerAngle = 0.2;
 % Check subject id
 if ~ismember(subID, 1:20)
     warning ('subID is a integer within [1:20]!');
@@ -39,6 +36,11 @@ if ~exist(dataDir,'dir')
 end
 
 %% Prepare params
+imgAngle = 12;
+fixOuterAngle = 0.3;
+fixInnerAngle = 0.2;
+readyDotColor = [255 0 0];
+bkgColor = [128 128 128];
 % compute image pixel
 pixelPerMilimeterHor = 1024/390;
 pixelPerMilimeterVer = 768/295;
@@ -52,17 +54,14 @@ PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
-% likeKey = KbName('1!'); % Left hand:1!,2@
-% dislikeKey = KbName('3$'); % Right hand: 3#,4$ 
-likeKey = KbName('f');
-disLikeKey = KbName('j');
+likeKey = KbName('1!'); % Left hand:1!,2@
+disLikeKey = KbName('3#'); % Right hand: 3#,4$ 
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 2);
 Screen('Preference','VisualDebugLevel',4);
 Screen('Preference','SuppressAllWarnings',1);
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
-bkgColor = [128 128 128];
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
 [xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
 HideCursor;
@@ -71,11 +70,8 @@ HideCursor;
 % Makes instruction texture
 picsFolderName = 'instruction';
 imgStart = sprintf('%s/%s', picsFolderName, 'instructionStart.jpg');
-imgReady = sprintf('%s/%s', picsFolderName, 'instructionReady.jpg');
 imgEnd = sprintf('%s/%s', picsFolderName, 'instructionBye.jpg');
-
 startTexture = Screen('MakeTexture', wptr, imread(imgStart));
-readyTexture = Screen('MakeTexture', wptr, imread(imgReady));
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
 
 %% Load design matrix
@@ -109,7 +105,6 @@ for t = 1:nStim
     stimTexture(t) = Screen('MakeTexture', wptr, img);
 end
 
-
 %% Show instruction
 Screen('DrawTexture', wptr, startTexture);
 Screen('Flip', wptr);
@@ -121,7 +116,7 @@ while true
     end
 end
 
-Screen('DrawTexture', wptr, readyTexture);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
 Screen('Flip', wptr);
 
 % Wait trigger(S key) to begin the test
