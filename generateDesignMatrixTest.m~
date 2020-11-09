@@ -1,0 +1,24 @@
+% This file is to generate design matrix for Tset set
+% Organize both stimulus image and stimulus order information into
+% BrainImageNet(BIN) structure
+
+clc;clear;
+%% Directory setting
+stimDir = '/nfs/e1/BrainImageNet/stimTest';
+imgDir = fullfile(stimDir,'SelectedImagesCOCO');
+designMat = fullfile(stimDir,'testSeq.mat');
+
+%% Prepare stimulus 
+imageName = dir(fullfile(imgDir)); 
+imageName = extractfield(imageName(3:end), 'name');
+for sub = 1:20
+    stimulus(sub,:,:) = reshape(imageName(randperm(length(imageName))), 10, 12);
+end
+
+%% Generate mSequence stim
+load(designMat);
+stimName = stimulus(:,:,mSeqCondition(:,2));
+stimOnset = permute(repmat(mSeqCondition(:,1),20,10,1),);
+mSeqStim = []
+onset = 
+%% Generate mSequence stim
