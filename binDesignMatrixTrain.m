@@ -2,22 +2,28 @@
 % Organize both stimulus image and stimulus order information into
 % BrainImageNet(BIN) structure
 
+clc;clear;
 %% Directory setting
-stimDir =  '/nfs/e1/BrainImageNet/stim';
+stimDir =  'D:\fMRI\BrainImageNet\stim';
 imgDir = fullfile(stimDir,'images');
 designDir = fullfile(stimDir,'designMatrix');
 
 %% Load super class  
 % read super class info
 fid = fopen(fullfile(designDir,'superClassMapping.csv'));
-C = textscan(fid, '%s %d %s %d','Headerlines',1, 'Delimiter',',');
+C = textscan(fid, '%s %d %s %s','Headerlines',1, 'Delimiter',',');
 fclose(fid);
 classID = C{1};
-superClassID = C{2}; 
+superClassID = C{2};
 className = C{3}; 
+superClassName = unique(C{4}, 'stable'); 
+
+nClass = 1000; 
+nSuperClass = 30;
+nSession = 80;
 
 %% Organize stimulus according to the super class info 
-stimulus = cell(1000,80);
+stimulus = cell(nClass,nSession);
 for i = 1:length(classID) % class loop
     imageName = dir(fullfile(imgDir,classID{i})); 
     imageName = extractfield(imageName(3:end), 'name');
@@ -25,45 +31,44 @@ for i = 1:length(classID) % class loop
     imageName = [];
 end
 
+
 %% Load optseq of super class 
-optSeqSuperClass = NaN(1000,80,3);
-for s = 1:80 % session loop
-    % read par from optseq
+optSeqSuperClass = NaN(nClass,nSession,3);% [onset, class, dur]
+for s = 1:nSession % session loop
+    % Read par from optseq
     optSeqSuperClassFile = fullfile(designDir,'ExpsessionorderTR1',...
         sprintf('BIN-static-session-%03d.csv',s));
     fid = fopen(optSeqSuperClassFile);
     optSeq = textscan(fid, '%d %d %d %d %s');
     fclose(fid);
 
-    % remove null event and assemble optSeqSuperClass
+    % Remove null event and assemble optSeqSuperClass
     optSeq = cell2mat(optSeq(1:3));
     optSeq = optSeq(optSeq(:,2) ~= 0,:);
-    d(s) = length(optSeq);
     optSeqSuperClass(:,s,:) = optSeq;
     optSeq = [];
 end
 
 %% Translate superClass optSeq to class optSeq
-optSeqClass = NaN(size(optSeqSuperClass));
-optSeqClass(:,:,[1,3]) = optSeqSuperClass(:,:,[1,3]);
-optSeqClass = num2cell(optSeqClass);
-
-for s = 1:80 % session loop
-    for c = 1:30 % class loop
-        superClassTrial = optSeqSuperClass(:,s,2) == c;
-        classTrail = find(superClassID == c); 
-        classTmpID = classID(classTrail);
-        optSeqClass(superClassTrial,s,2) = classTmpID(randperm(length(classTmpID))) ;
+optSeqClass = optSeqSuperClass;
+for s = 1:nSession % session loop
+    for c = 1:nSuperClass % class loop
+        superClassTrial = (optSeqSuperClass(:,s,2) == c);
+        classTrial = find(superClassID == c);       
+        optSeqClass(superClassTrial,s,2) = classTrial(randperm(length(classTrial))) ;
     end
-    stimulusPerSession = stimulus(:,s);
-    for i = 1:1000 %image loop
-        optSeqClass{i,s,2} = stimulusPerSession{contains(stimulusPerSession, optSeqClass{i,s,2})};       
-    end    
 end
 
+%% Align onset of trials to the first trial of each run
+nRun = 10;
+seq = 0:4:476;
+seq([6*[1:1:20]]) = [];
+onset = repmat(seq', [10 1]);
+for s = 1:nSession
+    optSeqClass(:,s,1) = onset;
+end
+ 
 %% Pack and save BIN strcture
-superClassNamePath = fullfile(stimDir,'designMatrix/superClassName.mat');
-load(superClassNamePath);
 BIN.desp = 'BrainImageNet session-level paradigm';
 BIN.classID = classID;
 BIN.superClassName = superClassName;
@@ -73,4 +78,4 @@ BIN.paradigmSuperClass = optSeqSuperClass;
 BIN.paradigmClass = optSeqClass;
 
 % save BIN
-save('BIN.mat', 'BIN');
+save(fullfile(designDir,'BIN.mat'), 'BIN');
