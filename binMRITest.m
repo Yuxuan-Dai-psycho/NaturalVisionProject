@@ -185,12 +185,8 @@ subDir = fullfile(dataDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir')
     mkdir(subDir)
 end
-sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
-if ~exist(sessDir,'dir')
-    mkdir(sessDir)
-end
-fileName = fullfile(sessDir, ...
-    sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
+fileName = fullfile(subDir, ...
+    sprintf('sub%02d_run%02d.mat',subID, runID));
 fprintf('Data were saved to: %s\n',fileName);
 save(fileName,'trial');
 

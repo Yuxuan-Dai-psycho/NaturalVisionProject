@@ -31,7 +31,6 @@ for i = 1:length(classID) % class loop
     imageName = [];
 end
 
-
 %% Load optseq of super class 
 optSeqSuperClass = NaN(nClass,nSession,3);% [onset, class, dur]
 for s = 1:nSession % session loop
