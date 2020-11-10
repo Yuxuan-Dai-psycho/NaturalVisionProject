@@ -1,4 +1,4 @@
-function trial = binMRI(subID,sessID,runID)
+function trial = binMRITrain(subID,sessID,runID)
 % function [subject,task] = binMRI(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
 % subID, subjet ID, integer[1-20] 
@@ -69,7 +69,7 @@ HideCursor;
 %% Create instruction texture
 % Makes instruction texture
 picsFolderName = 'instruction';
-imgStart = sprintf('%s/%s', picsFolderName, 'instructionStart.jpg');
+imgStart = sprintf('%s/%s', picsFolderName, 'instructionStartTrain.jpg');
 imgEnd = sprintf('%s/%s', picsFolderName, 'instructionBye.jpg');
 startTexture = Screen('MakeTexture', wptr, imread(imgStart));
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd));

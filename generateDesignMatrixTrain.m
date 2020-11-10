@@ -59,17 +59,15 @@ for s = 1:nSession % session loop
     end
 end
 
-
 %% Align onset of trials to the first trial of each run
 nRun = 10;
-seq = 0:4:480;
-seq([6*[1:1:20],121]) = [];
-seq = seq(:);
-seq = repmat(seq, [10 1]);
+seq = 0:4:476;
+seq([6*[1:1:20]]) = [];
+onset = repmat(seq', [10 1]);
 for s = 1:nSession
-    optSeqClass(:,s,1) = seq;
+    optSeqClass(:,s,1) = onset;
 end
-
+ 
 %% Pack and save BIN strcture
 BIN.desp = 'BrainImageNet session-level paradigm';
 BIN.classID = classID;

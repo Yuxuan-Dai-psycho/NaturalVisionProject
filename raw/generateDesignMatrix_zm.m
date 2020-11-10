@@ -56,10 +56,15 @@ for s = 1:80 % session loop
         optSeqClass(superClassTrial,s,2) = classTmpID(randperm(length(classTmpID))) ;
     end
     stimulusPerSession = stimulus(:,s);
-    for i = 1:1000 %image loop
-        optSeqClass{i,s,2} = stimulusPerSession{contains(stimulusPerSession, optSeqClass{i,s,2})};       
-    end    
 end
+
+%% Reshape optSeqClass to the new session design
+optSeqName = num2cell(optSeqClass);
+for s = 1:nSession % session loop
+    optSeqName(:,s,2) = stimulus(optSeqClass(:,s,2),s);
+end
+optSeqName = reshape(optSeqName, 800, 100, 3);
+
 
 %% Pack and save BIN strcture
 superClassNamePath = fullfile(stimDir,'designMatrix/superClassName.mat');

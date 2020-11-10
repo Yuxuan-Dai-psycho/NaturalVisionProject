@@ -4,8 +4,8 @@
 
 clc;clear;
 %% Directory setting
-stimDir = '/nfs/e1/BrainImageNet/stimTest';
-imgDir = fullfile(stimDir,'SelectedImagesCOCO');
+stimDir = 'D:\fMRI\BrainImageNet\stimTest';
+imgDir = fullfile(stimDir,'images');
 designMat = fullfile(stimDir,'testSeq.mat');
 
 %% Prepare stimulus 
