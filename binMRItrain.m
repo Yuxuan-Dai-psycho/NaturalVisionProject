@@ -67,7 +67,8 @@ runClass = sessClass(:,runID);
 
 % Collect trial info for this run 
 nStim = length(runStim);
-trial = zeros(nStim, 6); % [onset, class, dur, key, rt]
+nTrial = nStim;
+trial = zeros(nTrial, 6); % [onset, class, dur, key, rt]
 trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Prepare params
@@ -161,7 +162,7 @@ WaitSecs(beginDur);
 
 % Show stimulus
 tStart = GetSecs;
-for t = 1:nStim
+for t = 1:nTrial
     % Show stimulus with fixation
     Screen('DrawTexture', wptr, stimTexture(t));
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
