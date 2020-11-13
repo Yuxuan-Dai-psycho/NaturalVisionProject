@@ -69,13 +69,13 @@ for s = 1:nSession
 end
  
 %% Pack and save BIN strcture
-Train.desp = 'BrainImageNet session-level paradigm';
-Train.classID = classID;
-Train.superClassName = superClassName;
-Train.superClassID = superClassID;
-Train.stimulus = stimulus;
-Train.paradigmSuperClass = optSeqSuperClass;
-Train.paradigmClass = optSeqClass;
+BIN.desp = 'BrainImageNet session-level paradigm';
+BIN.classID = classID;
+BIN.superClassName = superClassName;
+BIN.superClassID = superClassID;
+BIN.stimulus = stimulus;
+BIN.paradigmSuperClass = optSeqSuperClass;
+BIN.paradigmClass = optSeqClass;
 
 % Save BIN to design dir
 save(fullfile(designDir,'BIN.mat'), 'BIN');
