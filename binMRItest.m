@@ -15,7 +15,9 @@ if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
 % Check session id
 if ~ismember(sessID, 1:1), error('sessID is a integer within [1:1]!');end
 % Check run id
-if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
+nRun = 10;
+if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
+
 
 %% Data dir 
 workDir = 'H:\NaturalImageData\stimTest';
@@ -32,7 +34,6 @@ if ~exist(mriDir,'dir'), mkdir(mriDir), end
 testDir = fullfile(mriDir,'test');
 if ~exist(testDir,'dir'), mkdir(testDir),end
 
-
 % Make subject dir
 subDir = fullfile(mriDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
@@ -41,7 +42,6 @@ if ~exist(subDir,'dir'), mkdir(subDir),end
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
-
 %% Stimulus
 designFile = fullfile(testDir,'design.mat');
 if ~exist(designFile,'file')
@@ -49,10 +49,9 @@ if ~exist(designFile,'file')
     imgName = imgName(3:end);
     % randomize images for this subject 
     subImg = randperm(length(imgName));    
-    nRun = 10;
     % each column contain the image IDs for a run
     runImg = reshape(subImg,[],nRun);
-    % all runs use the same sequence, two column: [onset, cond]
+    % all runs use the same sequence which consist of two column: [onset, cond]
     runSeq = load(fullfile(workDir,'testSeq.mat'));
     runSeq = runSeq.designMat;
     save(fullfile(testDir,'design.mat'),'imgName','runImg','runSeq');
@@ -69,7 +68,9 @@ imgAngle = 12;
 fixOuterAngle = 0.3;
 fixInnerAngle = 0.2;
 readyDotColor = [255 0 0];
-bkgColor = [128 128 128];
+% bkgColor = [128 128 128];
+bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
+
 % compute image pixel
 pixelPerMilimeterHor = 1024/390;
 pixelPerMilimeterVer = 768/295;
@@ -107,8 +108,7 @@ endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
 nStim = size(runImg, 1);
 stimTexture = zeros(nStim,1);
 for t = 1:nStim
-    imgFile = fullfile(stimDir, runImgName{t});
-    img = imread(imgFile);
+    img = imread( fullfile(stimDir, runImgName{t}));
     img = imresize(img, [imgPixelHor imgPixelVer]);
     stimTexture(t) = Screen('MakeTexture', wptr, img);
 end
@@ -137,20 +137,20 @@ while true
 end
 
 
-%% Parms for stimlus presentation
+%% Parms for stimlus presentation and Trials
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 2 - 0.5*flipInterval; % on duration for a stimulus
 offDur = 2; % off duration for a stimulus
 runDur = 672; % duration for a run
-beginDur = 16; % beigining fixation duration
-endDur = 16; % ending fixation duration
+beginDur = 8; % beigining fixation duration
+endDur = 8; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
 
-%% Trials
 % Collect trial info for this run
-nTrial = length(runSeq);
-trial = zeros(nTrial, 6); % [onset,cond,imgID, trueAnswer, key, rt]
+nTrial = length(runSeq); 
+% [onset,cond,imgID, trueAnswer, key, rt]. cond: 1-12
+trial = zeros(nTrial, 6);
 trial(:,1:2) = runSeq;    % [onset, condition]
 for t = 1:nStim
     trial(trial(:,2) == t,3) = runImg(t);
@@ -159,7 +159,7 @@ end
 % 1-back true answer, 1,same as the previous one.  
 trial(2:end,4) = ~diff(trial(:,2));
 
-% Ending timing of trials
+% End timing of trials
 tEnd = [trial(2:end, 1);runDur]; 
 
 %% Run experiment
@@ -171,9 +171,9 @@ WaitSecs(beginDur);
 
 % Show stimulus
 tStart = GetSecs;
-for t = 1:nStim
+for t = 1:nTrial
     % Show stimulus with fixation
-    Screen('DrawTexture', wptr, stimTexture(t));
+    Screen('DrawTexture', wptr, stimTexture(trial(t,2)));
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     tStim = Screen('Flip',wptr);
@@ -190,10 +190,10 @@ for t = 1:nStim
             if keyCode(escKey), sca; return;
             elseif keyCode(sameKey),   key = 1;
             elseif keyCode(diffKey),   key = -1; 
+            else, key = 0; 
             end
             rt = tKey - tFix; % reaction time
-            trial(t, 5) = key;
-            trial(t, 6) = rt;
+            trial(t, 5:6) = [key,rt];
             break;
         end
     end
@@ -218,7 +218,7 @@ ShowCursor;
 Screen('CloseAll');
 
 %% Save data for this run
-fileName = fullfile(sessDir,sprintf('sub%02d_run%02d.mat',subID, runID));
+fileName = fullfile(sessDir, sprintf('sub%02d_sess%2d_run%02d.mat',subID,sessID,runID));
 fprintf('Data were saved to: %s\n',fileName);
 save(fileName,'trial','sessID','subID','runID');
 

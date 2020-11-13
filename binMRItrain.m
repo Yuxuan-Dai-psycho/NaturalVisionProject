@@ -58,7 +58,7 @@ if ~exist(designFile,'file')
     save(fullfile(sessDir,'design.mat'),'sessStim','sessPar','sessClass');
 end
 
-% load session design
+% Load session design
 load(fullfile(sessDir,'design.mat'),'sessStim','sessPar','sessClass');
 
 % Image for this run
@@ -75,7 +75,9 @@ imgAngle = 12;
 fixOuterAngle = 0.3;
 fixInnerAngle = 0.2;
 readyDotColor = [255 0 0];
-bkgColor = [128 128 128];
+% bkgColor = [128 128 128];
+bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
+
 % compute image pixel
 pixelPerMilimeterHor = 1024/390;
 pixelPerMilimeterVer = 768/295;
@@ -157,7 +159,6 @@ Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2)
 Screen('Flip',wptr);
 WaitSecs(beginDur);
 
-
 % Show stimulus
 tStart = GetSecs;
 for t = 1:nStim
@@ -178,8 +179,9 @@ for t = 1:nStim
         [keyIsDown, tKey, keyCode] = KbCheck();       
         if keyIsDown
             if keyCode(escKey), sca; return;
-            elseif keyCode(likeKey),   key = 1;
+            elseif keyCode(likeKey),    key = 1;
             elseif keyCode(disLikeKey), key = -1;
+            else,  key = 0;  
             end
             rt = tKey - tFix; % reaction time
             trial(t, 4:5) = [key,rt];
