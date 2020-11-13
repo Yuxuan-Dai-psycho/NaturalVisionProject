@@ -26,14 +26,30 @@ if ~ismember(runID, 1:10)
     warning ('runID is a integer within [1:10]!');
 end
 
-%% Dir setting
+%% Data dir 
 workDir = 'D:\fMRI\BrainImageNet\stim';
 stimDir = fullfile(workDir,'images');
 designDir = fullfile(workDir,'designMatrix');
+
+% Make data dir
 dataDir = fullfile(workDir,'data');
-if ~exist(dataDir,'dir')
-    mkdir(dataDir)
-end
+if ~exist(dataDir,'dir'), mkdir(dataDir), end
+
+% Make fmri dir
+mriDir = fullfile(dataDir,'fmri');
+if ~exist(mriDir,'dir'), mkdir(mriDir), end
+
+% Make subject dir
+subDir = fullfile(mriDir,sprintf('sub%02d', subID));
+if ~exist(subDir,'dir'), mkdir(subDir),end
+
+% Make train dir for the subject
+trainDir = fullfile(subDir,'train');
+if ~exist(trainDir,'dir'), mkdir(trainDir),end
+
+% Make session dir
+sessDir = fullfile(trainDir,sprintf('sess%02d', sessID));
+if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 %% Prepare params
 imgAngle = 12;
@@ -75,7 +91,7 @@ startTexture = Screen('MakeTexture', wptr, imread(imgStart));
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
 
 %% Load design matrix
-load(fullfile(designDir,'BIN.mat'));
+load(fullfile(designDir,'BIN.mat'),'BIN');
 sess = 4*(subID-1)+ sessID;
 
 % par for this run
@@ -194,16 +210,8 @@ ShowCursor;
 Screen('CloseAll');
 
 %% Save data for this run
-subDir = fullfile(dataDir,sprintf('sub%02d', subID));
-if ~exist(subDir,'dir')
-    mkdir(subDir)
-end
-sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
-if ~exist(sessDir,'dir')
-    mkdir(sessDir)
-end
 fileName = fullfile(sessDir, ...
-    sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
+    sprintf('sub%02d_train_sess%02d_run%02d.mat',subID,sessID, runID));
 fprintf('Data were saved to: %s\n',fileName);
 save(fileName,'trial');
 
