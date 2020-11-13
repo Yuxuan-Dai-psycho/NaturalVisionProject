@@ -82,7 +82,7 @@ KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
 sameKey = KbName('1!'); % Left hand:1!,2@
-% diffKey = KbName('3#'); % Right hand: 3#,4$ 
+diffKey = KbName('3#'); % Right hand: 3#,4$ 
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 2);
@@ -157,7 +157,7 @@ end
 % 1-back true answer, 1,same as the previous one.  
 trial(2:end,4) = ~diff(trial(:,2));
 
-% end timing of trial
+% Ending timing of trials
 tEnd = [trial(2:end, 1);runDur]; 
 
 %% Run experiment
@@ -187,7 +187,7 @@ for t = 1:nStim
         if keyIsDown
             if keyCode(escKey), sca; return;
             elseif keyCode(sameKey),   key = 1;
-            else,  key = -1; 
+            elseif keyCode(diffKey),   key = -1; 
             end
             rt = tKey - tFix; % reaction time
             trial(t, 5) = key;
