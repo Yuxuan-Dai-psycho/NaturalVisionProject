@@ -16,7 +16,7 @@ fclose(fid);
 classID = C{1}; % ImageNet class id, 1000x1, cell array
 className = C{3}; % ImageNet class name, 1000x1, cell array
 superClassID = C{2}; % 30 superClass ID, 1000x1, int array, 
-superClassName = unique(C{4}, 'stable'); % super class name, 30 x 1 array
+superClassName = C{4}; % super class name, 1000 x 1 array
 
 nClass = 1000; 
 nSuperClass = 30;
@@ -72,10 +72,10 @@ end
 %% Pack and save BIN strcture
 BIN.desp = 'BrainImageNet session-level paradigm';
 BIN.classID = classID; % ImageNet class id, 1000x1, cell array
-BIN.superClassName = superClassName;% ImageNet class id, 30x1, cell array
+BIN.superClassName = superClassName;% ImageNet class id, 1000x1, cell array
 BIN.superClassID = superClassID;% superclass class id, 1000x1, int array
 BIN.stimulus = stimulus; % 1000 x 80, cell array
-BIN.paradigmSuperClass = optSeqSuperClass; % 1000(class) x 80(session) x 3  array
+BIN.paradigmSuperClass = optSeqSuperClass; % 1000(class) x 80(session) x 3 array
 BIN.paradigmClass = optSeqClass; % 1000(class) x 80(session) x 3  array
 
 % Save BIN to design dir
