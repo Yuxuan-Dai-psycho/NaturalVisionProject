@@ -84,9 +84,8 @@ HideCursor;
 
 %% Create instruction texture
 % Makes instruction texture
-picsFolderName = 'instruction';
-imgStart = sprintf('%s/%s', picsFolderName, 'instructionStartTrain.jpg');
-imgEnd = sprintf('%s/%s', picsFolderName, 'instructionBye.jpg');
+imgStart = sprintf('%s/%s', 'instruction', 'instructionStartTrain.jpg');
+imgEnd = sprintf('%s/%s', 'instruction', 'instructionBye.jpg');
 startTexture = Screen('MakeTexture', wptr, imread(imgStart));
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
 

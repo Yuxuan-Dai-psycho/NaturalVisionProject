@@ -59,11 +59,11 @@ for s = 1:nSession % session loop
     end
 end
 
-%% Align onset of trials to the first trial of each run
-nRun = 10;
-seq = 0:4:476;
-seq([6*[1:1:20]]) = [];
-onset = repmat(seq', [10 1]);
+%% Replace optSeq timing with Kay design
+nRun = 10; runDur = 476; trialDur = 4; % in seconds
+kaySeq = 0:trialDur:runDur; % Trials are uniformly-spaced in time(i.e., 4s)
+kaySeq(6:6:length(kaySeq)) = []; % Remove null trials(evey sixth trials)
+onset = repmat(kaySeq, [1,nRun]);
 for s = 1:nSession
     optSeqClass(:,s,1) = onset;
 end
@@ -77,5 +77,5 @@ Train.stimulus = stimulus;
 Train.paradigmSuperClass = optSeqSuperClass;
 Train.paradigmClass = optSeqClass;
 
-% save BIN
-save(fullfile(designDir,'BIN.mat'), 'Train');
+% Save BIN to design dir
+save(fullfile(designDir,'BIN.mat'), 'BIN');
