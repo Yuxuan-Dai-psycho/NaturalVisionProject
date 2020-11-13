@@ -17,6 +17,7 @@ if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check run id
 if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
+nRun = 10; 
 
 %% Data dir 
 workDir = 'D:\fMRI\BrainImageNet\stim';
@@ -44,7 +45,8 @@ sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 %% Stimulus for this sess
-designFile = fullfile(sessDir,'design.mat');
+designFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
 if ~exist(designFile,'file')
     load(fullfile(designDir,'BIN.mat'),'BIN');
     sess = 4*(subID-1)+ sessID;
@@ -52,14 +54,14 @@ if ~exist(designFile,'file')
     sessPar = squeeze(BIN.paradigmClass(:,sess,:));
     classOrder = sessPar(:,2);
     sessStim = BIN.stimulus(classOrder,sess);
-    sessStim = reshape(sessStim,[100,10]);
-    sessClass = reshape(BIN.classID(classOrder), [100,10]);
-    sessPar = reshape(sessPar,[100,10,3]);
-    save(fullfile(sessDir,'design.mat'),'sessStim','sessPar','sessClass');
+    sessStim = reshape(sessStim,[100,nRun]);
+    sessClass = reshape(BIN.classID(classOrder), [100,nRun]);
+    sessPar = reshape(sessPar,[100,nRun,3]);
+    save(designFile,'sessStim','sessPar','sessClass');
 end
 
 % Load session design
-load(fullfile(sessDir,'design.mat'),'sessStim','sessPar','sessClass');
+load(designFile,'sessStim','sessPar','sessClass');
 
 % Image for this run
 runStim = sessStim(:,runID);
@@ -67,7 +69,8 @@ runClass = sessClass(:,runID);
 
 % Collect trial info for this run 
 nStim = length(runStim);
-trial = zeros(nStim, 6); % [onset, class, dur, key, rt]
+nTrial = nStim;
+trial = zeros(nTrial, 6); % [onset, class, dur, key, rt]
 trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Prepare params
@@ -161,13 +164,13 @@ WaitSecs(beginDur);
 
 % Show stimulus
 tStart = GetSecs;
-for t = 1:nStim
+for t = 1:nTrial
     % Show stimulus with fixation
     Screen('DrawTexture', wptr, stimTexture(t));
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     tStim = Screen('Flip',wptr);
-    trial(t, 6) = tStim - tStart;
+    trial(t, 6) = tStim - tStart; % timing error
     
     % Show begining fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
@@ -209,8 +212,9 @@ ShowCursor;
 Screen('CloseAll');
 
 %% Save data for this run
-fileName = fullfile(sessDir,sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
-fprintf('Data were saved to: %s\n',fileName);
-save(fileName,'trial','sessID','subID','runID');
+resultFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
+fprintf('Data were saved to: %s\n',resultFile);
+save(resultFile,'trial','sessID','subID','runID');
 
 

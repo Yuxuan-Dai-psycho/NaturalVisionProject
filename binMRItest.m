@@ -1,4 +1,5 @@
 function trial = binMRItest(subID, sessID, runID)
+% function trial = binMRItest(subID, sessID, runID)
 % fMRI experiment for BrainImageNet test dataset
 % subID, subjet ID, integer[1-20] 
 % runID, run ID, integer [1-10] 
@@ -43,7 +44,8 @@ sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 %% Stimulus
-designFile = fullfile(testDir,'design.mat');
+designFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
 if ~exist(designFile,'file')
     imgName = extractfield(dir(stimDir), 'name');
     imgName = imgName(3:end);
@@ -54,14 +56,16 @@ if ~exist(designFile,'file')
     % all runs use the same sequence which consist of two column: [onset, cond]
     runSeq = load(fullfile(workDir,'testSeq.mat'));
     runSeq = runSeq.designMat;
-    save(fullfile(testDir,'design.mat'),'imgName','runImg','runSeq');
+    save(designFile,'imgName','runImg','runSeq');
 end
 
-% load design
+% Load design
 design = load(designFile);
 runImg = design.runImg(:,runID);
 runImgName = design.imgName(runImg); 
 runSeq = design.runSeq;
+nTrial = length(runSeq); 
+nStim = length(runImg);
 
 %% Display
 imgAngle = 12;
@@ -103,9 +107,7 @@ imgEnd = sprintf('%s/%s', 'instruction', 'instructionBye.jpg');
 startTexture = Screen('MakeTexture', wptr, imread(imgStart));
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
 
-
 %% Make stimuli texture
-nStim = size(runImg, 1);
 stimTexture = zeros(nStim,1);
 for t = 1:nStim
     img = imread( fullfile(stimDir, runImgName{t}));
@@ -123,7 +125,7 @@ while true
     if keyIsDown && keyCode(sameKey), break;
     end
 end
-
+% Show ready signal
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
 Screen('Flip', wptr);
 
@@ -148,9 +150,8 @@ fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
 
 % Collect trial info for this run
-nTrial = length(runSeq); 
-% [onset,cond,imgID, trueAnswer, key, rt]. cond: 1-12
-trial = zeros(nTrial, 6);
+% [onset,cond,imgID, trueAnswer, key, rt, timingError]. cond: 1-12
+trial = zeros(nTrial, 7);
 trial(:,1:2) = runSeq;    % [onset, condition]
 for t = 1:nStim
     trial(trial(:,2) == t,3) = runImg(t);
@@ -177,6 +178,7 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     tStim = Screen('Flip',wptr);
+    trial(t, 7) = tStim - tStart; % timing error
 
     % Show begining fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
@@ -213,12 +215,13 @@ Screen('DrawTexture', wptr, endTexture);
 Screen('Flip', wptr);
 WaitSecs(2);
 
-% show cursor and close all
+% Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
 
 %% Save data for this run
-fileName = fullfile(sessDir, sprintf('sub%02d_sess%2d_run%02d.mat',subID,sessID,runID));
-fprintf('Data were saved to: %s\n',fileName);
-save(fileName,'trial','sessID','subID','runID');
+resultFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%2d_run%02d.mat',subID,sessID,runID));
+fprintf('Data were saved to: %s\n',resultFile);
+save(resultFile,'trial','sessID','subID','runID');
 
