@@ -44,7 +44,8 @@ sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 %% Stimulus for this sess
-designFile = fullfile(sessDir,'design.mat');
+designFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
 if ~exist(designFile,'file')
     load(fullfile(designDir,'BIN.mat'),'BIN');
     sess = 4*(subID-1)+ sessID;
@@ -55,11 +56,11 @@ if ~exist(designFile,'file')
     sessStim = reshape(sessStim,[100,10]);
     sessClass = reshape(BIN.classID(classOrder), [100,10]);
     sessPar = reshape(sessPar,[100,10,3]);
-    save(fullfile(sessDir,'design.mat'),'sessStim','sessPar','sessClass');
+    save(designFile,'sessStim','sessPar','sessClass');
 end
 
 % Load session design
-load(fullfile(sessDir,'design.mat'),'sessStim','sessPar','sessClass');
+load(designFile,'sessStim','sessPar','sessClass');
 
 % Image for this run
 runStim = sessStim(:,runID);
@@ -210,8 +211,9 @@ ShowCursor;
 Screen('CloseAll');
 
 %% Save data for this run
-fileName = fullfile(sessDir,sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
-fprintf('Data were saved to: %s\n',fileName);
-save(fileName,'trial','sessID','subID','runID');
+resultFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
+fprintf('Data were saved to: %s\n',resultFile);
+save(resultFile,'trial','sessID','subID','runID');
 
 
