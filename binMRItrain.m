@@ -1,5 +1,5 @@
 function trial = binMRItrain(subID,sessID,runID)
-% function [subject,task] = binMRI(subID,sessID,runID)
+% function [subject,task] = binMRItrain(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
 % subID, subjet ID, integer[1-20] 
 % sessID, session ID, integer [1-4]
@@ -12,35 +12,72 @@ function trial = binMRItrain(subID,sessID,runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:20)
-    warning ('subID is a integer within [1:20]!');
-end
-
+if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
 % Check session id
-if ~ismember(sessID, 1:4)
-    warning ('sessID is a integer within [1:4]!');
-end
-
+if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check run id
-if ~ismember(runID, 1:10)
-    warning ('runID is a integer within [1:10]!');
-end
+if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 
-%% Dir setting
+%% Data dir 
 workDir = 'D:\fMRI\BrainImageNet\stim';
 stimDir = fullfile(workDir,'images');
 designDir = fullfile(workDir,'designMatrix');
+
+% Make data dir
 dataDir = fullfile(workDir,'data');
-if ~exist(dataDir,'dir')
-    mkdir(dataDir)
+if ~exist(dataDir,'dir'), mkdir(dataDir), end
+
+% Make fmri dir
+mriDir = fullfile(dataDir,'fmri');
+if ~exist(mriDir,'dir'), mkdir(mriDir), end
+
+% Make train dir 
+trainDir = fullfile(mriDir,'train');
+if ~exist(trainDir,'dir'), mkdir(trainDir),end
+
+% Make subject dir
+subDir = fullfile(trainDir,sprintf('sub%02d', subID));
+if ~exist(subDir,'dir'), mkdir(subDir),end
+
+% Make session dir
+sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
+if ~exist(sessDir,'dir'), mkdir(sessDir), end
+
+%% Stimulus for this sess
+designFile = fullfile(sessDir,'design.mat');
+if ~exist(designFile,'file')
+    load(fullfile(designDir,'BIN.mat'),'BIN');
+    sess = 4*(subID-1)+ sessID;
+    
+    sessPar = squeeze(BIN.paradigmClass(:,sess,:));
+    classOrder = sessPar(:,2);
+    sessStim = BIN.stimulus(classOrder,sess);
+    sessStim = reshape(sessStim,[100,10]);
+    sessClass = reshape(BIN.classID(classOrder), [100,10]);
+    sessPar = reshape(sessPar,[100,10,3]);
+    save(fullfile(sessDir,'design.mat'),'sessStim','sessPar','sessClass');
 end
+
+% Load session design
+load(fullfile(sessDir,'design.mat'),'sessStim','sessPar','sessClass');
+
+% Image for this run
+runStim = sessStim(:,runID);
+runClass = sessClass(:,runID);
+
+% Collect trial info for this run 
+nStim = length(runStim);
+trial = zeros(nStim, 6); % [onset, class, dur, key, rt]
+trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Prepare params
 imgAngle = 12;
 fixOuterAngle = 0.3;
 fixInnerAngle = 0.2;
 readyDotColor = [255 0 0];
-bkgColor = [128 128 128];
+% bkgColor = [128 128 128];
+bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
+
 % compute image pixel
 pixelPerMilimeterHor = 1024/390;
 pixelPerMilimeterVer = 768/295;
@@ -68,39 +105,16 @@ HideCursor;
 
 %% Create instruction texture
 % Makes instruction texture
-picsFolderName = 'instruction';
-imgStart = sprintf('%s/%s', picsFolderName, 'instructionStartTrain.jpg');
-imgEnd = sprintf('%s/%s', picsFolderName, 'instructionBye.jpg');
+imgStart = sprintf('%s/%s', 'instruction', 'instructionStartTrain.jpg');
+imgEnd = sprintf('%s/%s', 'instruction', 'instructionBye.jpg');
 startTexture = Screen('MakeTexture', wptr, imread(imgStart));
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
 
-%% Load design matrix
-load(fullfile(designDir,'BIN.mat'));
-sess = 4*(subID-1)+ sessID;
-
-% par for this run
-sessPar = squeeze(BIN.paradigmClass(:,sess,:));
-classOrder = sessPar(:,2);
-sessStim = BIN.stimulus(classOrder,sess);
-sessPar = reshape(sessPar,[100,10,3]);
-sessStim = reshape(sessStim,[100,10]);
-runStim = sessStim(:,runID);
-
-% Image for this run
-imgDir = reshape(BIN.classID(classOrder), [100,10]);
-runImgDir = imgDir(:,runID);
-
-% Collect trial info for this run 
-nStim = size(runStim, 1);
-trial = zeros(nStim, 6); % [onset, class, dur, key, rt]
-trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
-
 %% Make stimuli texture
-nStim = size(runStim, 1);
 stimTexture = zeros(nStim,1);
 for t = 1:nStim
-    imgFile = fullfile(stimDir, runImgDir, runStim{t});
-    img = imread(imgFile{t});
+    imgFile = fullfile(stimDir, runClass{t}, runStim{t});
+    img = imread(imgFile);
     img = imresize(img, [imgPixelHor imgPixelVer]);
     stimTexture(t) = Screen('MakeTexture', wptr, img);
 end
@@ -145,8 +159,8 @@ Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2)
 Screen('Flip',wptr);
 WaitSecs(beginDur);
 
-tStart = GetSecs;
 % Show stimulus
+tStart = GetSecs;
 for t = 1:nStim
     % Show stimulus with fixation
     Screen('DrawTexture', wptr, stimTexture(t));
@@ -165,8 +179,9 @@ for t = 1:nStim
         [keyIsDown, tKey, keyCode] = KbCheck();       
         if keyIsDown
             if keyCode(escKey), sca; return;
-            elseif keyCode(likeKey),   key = 1;
+            elseif keyCode(likeKey),    key = 1;
             elseif keyCode(disLikeKey), key = -1;
+            else,  key = 0;  
             end
             rt = tKey - tFix; % reaction time
             trial(t, 4:5) = [key,rt];
@@ -189,22 +204,13 @@ Screen('DrawTexture', wptr, endTexture);
 Screen('Flip', wptr);
 WaitSecs(2);
 
-% show cursor and close all
+% Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
 
 %% Save data for this run
-subDir = fullfile(dataDir,sprintf('sub%02d', subID));
-if ~exist(subDir,'dir')
-    mkdir(subDir)
-end
-sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
-if ~exist(sessDir,'dir')
-    mkdir(sessDir)
-end
-fileName = fullfile(sessDir, ...
-    sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
+fileName = fullfile(sessDir,sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
 fprintf('Data were saved to: %s\n',fileName);
-save(fileName,'trial');
+save(fileName,'trial','sessID','subID','runID');
 
 
