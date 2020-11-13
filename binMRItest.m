@@ -1,4 +1,4 @@
-function trial = binMRItest(subID, runID)
+function trial = binMRItest(subID, sessID, runID)
 % fMRI experiment for BrainImageNet test dataset
 % subID, subjet ID, integer[1-20] 
 % runID, run ID, integer [1-10] 
@@ -11,14 +11,11 @@ function trial = binMRItest(subID, runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:20)
-    warning ('subID is a integer within [1:20]!');
-end
-
+if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
+% Check session id
+if ~ismember(sessID, 1:1), error('sessID is a integer within [1:1]!');end
 % Check run id
-if ~ismember(runID, 1:10)
-    error ('runID is a integer within [1:10]!');
-end
+if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 
 %% Data dir 
 workDir = 'H:\NaturalImageData\stimTest';
@@ -31,13 +28,18 @@ if ~exist(dataDir,'dir'), mkdir(dataDir), end
 mriDir = fullfile(dataDir,'fmri');
 if ~exist(mriDir,'dir'), mkdir(mriDir), end
 
+% Make test dir for the subject
+testDir = fullfile(mriDir,'test');
+if ~exist(testDir,'dir'), mkdir(testDir),end
+
+
 % Make subject dir
 subDir = fullfile(mriDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
 
-% Make test dir for the subject
-testDir = fullfile(subDir,'test');
-if ~exist(testDir,'dir'), mkdir(testDir),end
+% Make session dir
+sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
+if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 
 %% Stimulus
@@ -216,7 +218,7 @@ ShowCursor;
 Screen('CloseAll');
 
 %% Save data for this run
-fileName = fullfile(testDir,sprintf('sub%02d_mri_test_run%02d.mat',subID, runID));
+fileName = fullfile(sessDir,sprintf('sub%02d_run%02d.mat',subID, runID));
 fprintf('Data were saved to: %s\n',fileName);
 save(fileName,'trial');
 
