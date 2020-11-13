@@ -17,6 +17,7 @@ if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check run id
 if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
+nRun = 10; 
 
 %% Data dir 
 workDir = 'D:\fMRI\BrainImageNet\stim';
@@ -53,9 +54,9 @@ if ~exist(designFile,'file')
     sessPar = squeeze(BIN.paradigmClass(:,sess,:));
     classOrder = sessPar(:,2);
     sessStim = BIN.stimulus(classOrder,sess);
-    sessStim = reshape(sessStim,[100,10]);
-    sessClass = reshape(BIN.classID(classOrder), [100,10]);
-    sessPar = reshape(sessPar,[100,10,3]);
+    sessStim = reshape(sessStim,[100,nRun]);
+    sessClass = reshape(BIN.classID(classOrder), [100,nRun]);
+    sessPar = reshape(sessPar,[100,nRun,3]);
     save(designFile,'sessStim','sessPar','sessClass');
 end
 
@@ -169,7 +170,7 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     tStim = Screen('Flip',wptr);
-    trial(t, 6) = tStim - tStart;
+    trial(t, 6) = tStim - tStart; % timing error
     
     % Show begining fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);

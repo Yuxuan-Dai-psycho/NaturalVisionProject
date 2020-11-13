@@ -1,4 +1,5 @@
 function trial = binMRItest(subID, sessID, runID)
+% function trial = binMRItest(subID, sessID, runID)
 % fMRI experiment for BrainImageNet test dataset
 % subID, subjet ID, integer[1-20] 
 % runID, run ID, integer [1-10] 
@@ -58,7 +59,7 @@ if ~exist(designFile,'file')
     save(designFile,'imgName','runImg','runSeq');
 end
 
-% load design
+% Load design
 design = load(designFile);
 runImg = design.runImg(:,runID);
 runImgName = design.imgName(runImg); 
@@ -149,8 +150,8 @@ fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
 
 % Collect trial info for this run
-% [onset,cond,imgID, trueAnswer, key, rt]. cond: 1-12
-trial = zeros(nTrial, 6);
+% [onset,cond,imgID, trueAnswer, key, rt, timingError]. cond: 1-12
+trial = zeros(nTrial, 7);
 trial(:,1:2) = runSeq;    % [onset, condition]
 for t = 1:nStim
     trial(trial(:,2) == t,3) = runImg(t);
@@ -177,6 +178,7 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     tStim = Screen('Flip',wptr);
+    trial(t, 7) = tStim - tStart; % timing error
 
     % Show begining fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
@@ -213,7 +215,7 @@ Screen('DrawTexture', wptr, endTexture);
 Screen('Flip', wptr);
 WaitSecs(2);
 
-% show cursor and close all
+% Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
 
