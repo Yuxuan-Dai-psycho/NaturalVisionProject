@@ -31,7 +31,6 @@ if ~exist(dataDir,'dir'), mkdir(dataDir), end
 mriDir = fullfile(dataDir,'fmri');
 if ~exist(mriDir,'dir'), mkdir(mriDir), end
 
-
 % Make train dir 
 trainDir = fullfile(mriDir,'train');
 if ~exist(trainDir,'dir'), mkdir(trainDir),end
@@ -40,11 +39,9 @@ if ~exist(trainDir,'dir'), mkdir(trainDir),end
 subDir = fullfile(trainDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
 
-
 % Make session dir
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
-
 
 %% Stimulus for this sess
 designFile = fullfile(sessDir,'design.mat');
@@ -212,6 +209,6 @@ Screen('CloseAll');
 %% Save data for this run
 fileName = fullfile(sessDir,sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
 fprintf('Data were saved to: %s\n',fileName);
-save(fileName,'trial');
+save(fileName,'trial','sessID','subID','runID');
 
 

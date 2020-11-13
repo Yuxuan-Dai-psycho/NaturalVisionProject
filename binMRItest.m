@@ -220,5 +220,5 @@ Screen('CloseAll');
 %% Save data for this run
 fileName = fullfile(sessDir,sprintf('sub%02d_run%02d.mat',subID, runID));
 fprintf('Data were saved to: %s\n',fileName);
-save(fileName,'trial');
+save(fileName,'trial','sessID','subID','runID');
 
