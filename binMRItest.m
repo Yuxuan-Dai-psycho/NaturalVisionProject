@@ -55,7 +55,7 @@ if ~exist(designFile,'file')
     runImg = reshape(subImg,[],nRun);
     % all runs use the same sequence which consist of two column: [onset, cond]
     runSeq = load(fullfile(workDir,'testSeq.mat'));
-    runSeq = runSeq.designMat;
+    runSeq = runSeq.mSeqCondition;
     save(designFile,'imgName','runImg','runSeq');
 end
 
