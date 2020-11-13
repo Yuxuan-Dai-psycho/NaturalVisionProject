@@ -13,10 +13,10 @@ designDir = fullfile(stimDir,'designMatrix');
 fid = fopen(fullfile(designDir,'superClassMapping.csv'));
 C = textscan(fid, '%s %d %s %s','Headerlines',1, 'Delimiter',',');
 fclose(fid);
-classID = C{1};
-superClassID = C{2};
-className = C{3}; 
-superClassName = unique(C{4}, 'stable'); 
+classID = C{1}; % ImageNet class id, 1000x1, cell array
+className = C{3}; % ImageNet class name, 1000x1, cell array
+superClassID = C{2}; % 30 superClass ID, 1000x1, int array, 
+superClassName = C{4}; % super class name, 1000 x 1 array
 
 nClass = 1000; 
 nSuperClass = 30;
@@ -66,16 +66,17 @@ kaySeq(6:6:length(kaySeq)) = []; % Remove null trials(evey sixth trials)
 onset = repmat(kaySeq, [1,nRun]);
 for s = 1:nSession
     optSeqClass(:,s,1) = onset;
+    optSeqSuperClass(:,s,1) = onset;  
 end
  
 %% Pack and save BIN strcture
 BIN.desp = 'BrainImageNet session-level paradigm';
-BIN.classID = classID;
-BIN.superClassName = superClassName;
-BIN.superClassID = superClassID;
-BIN.stimulus = stimulus;
-BIN.paradigmSuperClass = optSeqSuperClass;
-BIN.paradigmClass = optSeqClass;
+BIN.classID = classID; % ImageNet class id, 1000x1, cell array
+BIN.superClassName = superClassName;% ImageNet class id, 1000x1, cell array
+BIN.superClassID = superClassID;% superclass class id, 1000x1, int array
+BIN.stimulus = stimulus; % 1000 x 80, cell array
+BIN.paradigmSuperClass = optSeqSuperClass; % 1000(class) x 80(session) x 3 array
+BIN.paradigmClass = optSeqClass; % 1000(class) x 80(session) x 3  array
 
 % Save BIN to design dir
 save(fullfile(designDir,'BIN.mat'), 'BIN');

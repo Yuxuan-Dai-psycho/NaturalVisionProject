@@ -4,7 +4,7 @@ function trial = binMRItrain(subID,sessID,runID)
 % subID, subjet ID, integer[1-20] 
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-10] 
-% clc;clear;
+
 %% Arguments
 % if nargin < 3, subID = 1; end
 % if nargin < 2, sessID = 1; end
@@ -213,7 +213,7 @@ Screen('CloseAll');
 
 %% Save data for this run
 resultFile = fullfile(sessDir,...
-    sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID, runID));
+    sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID,runID));
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile,'trial','sessID','subID','runID');
 
