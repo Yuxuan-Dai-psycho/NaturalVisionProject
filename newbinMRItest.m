@@ -182,16 +182,20 @@ for t = 1:nTrial
     tFix = Screen('Flip', wptr, tStim + onDur);
     
     % Wait response
+    flag = 0;
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStart < tEnd(t)
         [keyIsDown, tKey, keyCode] = KbCheck();       
         if keyIsDown
-            if keyCode(escKey), sca; return;
-            elseif keyCode(cueKey),   key = 1;
-            else, key = 0; 
+            if flag == 0 
+                if keyCode(escKey), sca; return;
+                elseif keyCode(cueKey),   key = 1;
+                else, key = 0; 
+                end
+                rt = tKey - tFix; % reaction time
+                trial(t, 4:5) = [key,rt];
+                flag = flag + 1;
             end
-            rt = tKey - tFix; % reaction time
-            trial(t, 4:5) = [key,rt];
         end
     end
 end
