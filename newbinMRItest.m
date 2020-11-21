@@ -19,9 +19,8 @@ if ~ismember(sessID, 1:1), error('sessID is a integer within [1:1]!');end
 nRun = 10;
 if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
 
-
 %% Data dir 
-workDir = 'H:\NaturalImageData\stimTest';
+workDir = pwd;
 stimDir = fullfile(workDir,'images');
 % Make data dir
 dataDir = fullfile(workDir,'data');
@@ -36,7 +35,7 @@ testDir = fullfile(mriDir,'test');
 if ~exist(testDir,'dir'), mkdir(testDir),end
 
 % Make subject dir
-subDir = fullfile(mriDir,sprintf('sub%02d', subID));
+subDir = fullfile(testDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
 
 % Make session dir
@@ -54,7 +53,6 @@ fixOuterColor = [0 0 0]; % color of fixation circular ring
 whiteFixation = [255 255 255]; % color of fixation circular point
 redFixation = [255 0 0]; % color of fixation circular point
 
-
 % compute image pixel
 pixelPerMilimeterHor = 1024/390;
 pixelPerMilimeterVer = 768/295;
@@ -68,8 +66,7 @@ PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
-sameKey = KbName('1!'); % Left hand:1!,2@
-diffKey = KbName('3#'); % Right hand: 3#,4$ 
+cueKey = KbName('1!'); % Left hand:1!,2@
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 2);
@@ -105,7 +102,7 @@ Screen('Flip', wptr);
 while KbCheck(); end
 while true
     [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && keyCode(sameKey), break;
+    if keyIsDown && keyCode(cueKey), break;
     end
 end
 % Show ready signal
@@ -149,7 +146,7 @@ tEnd = trial(:, 1) + 3;
 %% Parms for stimlus presentation and Trials
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 0.5 - 0.5*flipInterval; % on duration for a stimulus
-offDur = 2.5; % off duration for a stimulus
+% offDur = 2.5; % off duration for a stimulus
 beginDur = 2; % beigining fixation duration
 endDur = 2; % ending fixation duration
 
@@ -169,7 +166,7 @@ for t = 1:nTrial
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
         
     elseif trial(t,2) == 1000 % show only red fixation
-        Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2  );
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, redFixation , [], 2);
         
     else % show only red fixation
@@ -186,25 +183,17 @@ for t = 1:nTrial
     
     % Wait response
     while KbCheck(), end % empty the key buffer
-    while GetSecs - tFix < offDur
+    while GetSecs - tStart < tEnd(t)
         [keyIsDown, tKey, keyCode] = KbCheck();       
         if keyIsDown
             if keyCode(escKey), sca; return;
-            elseif keyCode(sameKey),   key = 1;
-            elseif keyCode(diffKey),   key = -1; 
+            elseif keyCode(cueKey),   key = 1;
             else, key = 0; 
             end
             rt = tKey - tFix; % reaction time
             trial(t, 4:5) = [key,rt];
-            break;
         end
     end
-    
-    % wait until tEnd
-    while GetSecs - tStart < tEnd(t)
-        [~, ~, keyCode] = KbCheck();
-        if keyCode(escKey), sca; return; end
-    end    
 end
 
 % Wait ending fixation

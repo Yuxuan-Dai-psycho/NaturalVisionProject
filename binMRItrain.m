@@ -20,7 +20,7 @@ if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 nRun = 10; 
 
 %% Data dir 
-workDir = 'D:\fMRI\BrainImageNet\stim';
+workDir = pwd;
 stimDir = fullfile(workDir,'images');
 designDir = fullfile(workDir,'designMatrix');
 
