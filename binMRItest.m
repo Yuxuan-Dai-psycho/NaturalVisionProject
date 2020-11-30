@@ -19,9 +19,8 @@ if ~ismember(sessID, 1:1), error('sessID is a integer within [1:1]!');end
 nRun = 10;
 if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
 
-
 %% Data dir 
-workDir = 'H:\NaturalImageData\stimTest';
+workDir = 'D:\fMRI\BrainImageNet\stimTest';
 stimDir = fullfile(workDir,'images');
 % Make data dir
 dataDir = fullfile(workDir,'data');
@@ -36,60 +35,57 @@ testDir = fullfile(mriDir,'test');
 if ~exist(testDir,'dir'), mkdir(testDir),end
 
 % Make subject dir
-subDir = fullfile(mriDir,sprintf('sub%02d', subID));
+subDir = fullfile(testDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
 
 % Make session dir
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
-%% Stimulus
-designFile = fullfile(sessDir,...
-    sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
-if ~exist(designFile,'file')
-    imgName = extractfield(dir(stimDir), 'name');
-    imgName = imgName(3:end);
-    % randomize images for this subject 
-    subImg = randperm(length(imgName));    
-    % each column contain the image IDs for a run
-    runImg = reshape(subImg,[],nRun);
-    % all runs use the same sequence which consist of two column: [onset, cond]
-    runSeq = load(fullfile(workDir,'testSeq.mat'));
-    runSeq = runSeq.mSeqCondition;
-    save(designFile,'imgName','runImg','runSeq');
-end
-
-% Load design
-design = load(designFile);
-runImg = design.runImg(:,runID);
-runImgName = design.imgName(runImg); 
-runSeq = design.runSeq;
-nTrial = length(runSeq); 
-nStim = length(runImg);
 
 %% Display
 imgAngle = 12;
-fixOuterAngle = 0.3;
-fixInnerAngle = 0.2;
-readyDotColor = [255 0 0];
+fixOuterAngle = 0.2;% 0.3
+fixInnerAngle = 0.1;% 0.2
 % bkgColor = [128 128 128];
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
+fixOuterColor = [0 0 0]; % color of fixation circular ring
+whiteFixation = [255 255 255]; % color of fixation circular point
+redFixation = [255 0 0]; % color of fixation circular point
 
+%%% Unresolved!!!!!!!!!!!!!
 % compute image pixel
-pixelPerMilimeterHor = 1024/390;
-pixelPerMilimeterVer = 768/295;
+%%% original setting
+% pixelPerMilimeterHor = 1024/390;
+% pixelPerMilimeterVer = 768/295;
+
+%%% change 1
+% pixelPerMilimeterHor = 1024/293;
+% pixelPerMilimeterVer = 768/222;
+
+%%% change 2  ÊÓ½Ç12¡ã
+pixelPerMilimeterHor = 1280/293;
+pixelPerMilimeterVer = 960/222;
+
+%%%coresponding to original seting & change 1
 imgPixelHor = pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2));
 imgPixelVer = pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2));
 fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
 fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
+
+%%% change4 ÆÌÂú
+% imgPixelHor = 960;
+% imgPixelVer = 960;
+% fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
+% fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
 
 %% Response keys setting
 PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
-sameKey = KbName('1!'); % Left hand:1!,2@
-diffKey = KbName('3#'); % Right hand: 3#,4$ 
+cueKey1 = KbName('1!'); % Left hand:1!
+cueKey2 = KbName('2@'); % Left hand:2@
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 2);
@@ -107,12 +103,13 @@ imgEnd = sprintf('%s/%s', 'instruction', 'instructionBye.jpg');
 startTexture = Screen('MakeTexture', wptr, imread(imgStart));
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
 
-%% Make stimuli texture
-stimTexture = zeros(nStim,1);
+%% Prepare stimulus
+imgName = extractfield(dir(stimDir), 'name');
+imgName = imgName(3:end);
+nStim = length(imgName);
 for t = 1:nStim
-    img = imread( fullfile(stimDir, runImgName{t}));
-    img = imresize(img, [imgPixelHor imgPixelVer]);
-    stimTexture(t) = Screen('MakeTexture', wptr, img);
+    imgTmp = imread( fullfile(stimDir, imgName{t}));
+    img{t} = imresize(imgTmp, [imgPixelHor imgPixelVer]);
 end
 
 %% Show instruction
@@ -122,11 +119,11 @@ Screen('Flip', wptr);
 while KbCheck(); end
 while true
     [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && keyCode(sameKey), break;
+    if keyIsDown && (keyCode(cueKey1) || keyCode(cueKey2)), break;
     end
 end
 % Show ready signal
-Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, redFixation, [], 2);
 Screen('Flip', wptr);
 
 % Wait trigger(S key) to begin the test
@@ -138,73 +135,88 @@ while true
     end
 end
 
-
-%% Parms for stimlus presentation and Trials
-flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
-onDur = 2 - 0.5*flipInterval; % on duration for a stimulus
-offDur = 2; % off duration for a stimulus
-runDur = 672; % duration for a run
-beginDur = 8; % beigining fixation duration
-endDur = 8; % ending fixation duration
-fixOuterColor = [0 0 0]; % color of fixation circular ring
-fixInnerColor = [255 255 255]; % color of fixation circular point
-
+%% Design
 % Collect trial info for this run
-% [onset,cond,imgID, trueAnswer, key, rt, timingError]. cond: 1-12
-trial = zeros(nTrial, 7);
-trial(:,1:2) = runSeq;    % [onset, condition]
-for t = 1:nStim
-    trial(trial(:,2) == t,3) = runImg(t);
-end
+% [onset,cond,trueAnswer, key, rt, timingError].  
+nTrial = 150; 
+trial = zeros(nTrial, 6);
 
-% 1-back true answer, 1,same as the previous one.  
-trial(2:end,4) = ~diff(trial(:,2));
+% randomize condition: 1-120 images
+cond = 1:nTrial;% total trials
+cond(121:135) = 1000; % Null trials with red fix
+cond(136:nTrial) = 2000; % Null trials with white fix
+while true
+    cond = cond(randperm(length(cond)));
+    tmp = diff(cond);
+    tmp(abs(tmp)==1000) = 0 ; % null trials can not be colse each other
+    if cond(1) > 120, tmp(1) = 0; end  % the first trial can not be null trial
+    if all(tmp),break; end
+end
+onset = (0:nTrial-1)*3; 
+trial(:,1:2) = [onset',cond']; % [onset, condition]
+
+% True answer for red fix  
+trial(cond == 1000,3) = 1;
 
 % End timing of trials
-tEnd = [trial(2:end, 1);runDur]; 
+tEnd = trial(:, 1) + 3; 
+%% Parms for stimlus presentation and Trials
+flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
+onDur = 0.5 - 0.5*flipInterval; % on duration for a stimulus
+%offDur = 2.5; % off duration for a stimulus
+beginDur = 16; % beigining fixation duration
+endDur = 16; % ending fixation duration
 
 %% Run experiment
 % Show begining fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
 
 % Show stimulus
 tStart = GetSecs;
 for t = 1:nTrial
-    % Show stimulus with fixation
-    Screen('DrawTexture', wptr, stimTexture(trial(t,2)));
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
+    if trial(t,2) <= 120  % show stimulus with fixation
+        stimTexture = Screen('MakeTexture', wptr, img{trial(t,2)});
+        Screen('DrawTexture', wptr, stimTexture);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+        Screen('Close',stimTexture); % closed the previous img texture
+        
+    elseif trial(t,2) == 1000 % show only red fixation
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2  );
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, redFixation , [], 2);
+        
+    else % show only red fixation
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+    end
     tStim = Screen('Flip',wptr);
-    trial(t, 7) = tStim - tStart; % timing error
-
-    % Show begining fixation
+    trial(t, 6) = tStim - tStart; % timing error
+        
+    % Show after stimulus fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
     tFix = Screen('Flip', wptr, tStim + onDur);
     
+    % Wait response
+    flag = 0;
     while KbCheck(), end % empty the key buffer
-    while GetSecs - tFix < offDur
+    while GetSecs - tStart < tEnd(t)
         [keyIsDown, tKey, keyCode] = KbCheck();       
         if keyIsDown
-            if keyCode(escKey), sca; return;
-            elseif keyCode(sameKey),   key = 1;
-            elseif keyCode(diffKey),   key = -1; 
-            else, key = 0; 
+            if flag == 0 
+                if keyCode(escKey), sca; return;
+                elseif (keyCode(cueKey1) || keyCode(cueKey2)) ,    key = 1;
+                else, key = 0; 
+                end
+                rt = tKey - tFix; % reaction time
+                trial(t, 4:5) = [key,rt];
+                flag = flag + 1;
             end
-            rt = tKey - tFix; % reaction time
-            trial(t, 5:6) = [key,rt];
-            break;
         end
     end
-    
-    % wait until tEnd
-    while GetSecs - tStart < tEnd(t)
-        [~, ~, keyCode] = KbCheck();
-        if keyCode(escKey), sca; return; end
-    end    
 end
 
 % Wait ending fixation
@@ -223,5 +235,5 @@ Screen('CloseAll');
 resultFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%2d_run%02d.mat',subID,sessID,runID));
 fprintf('Data were saved to: %s\n',resultFile);
-save(resultFile,'trial','sessID','subID','runID');
+save(resultFile,'trial','sessID','subID','runID','imgName');
 
