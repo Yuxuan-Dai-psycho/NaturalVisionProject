@@ -1,3 +1,5 @@
+
+
 function trial = binMRItrain(subID,sessID,runID)
 % function [subject,task] = binMRItrain(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
@@ -20,7 +22,7 @@ if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 nRun = 10; 
 
 %% Data dir 
-workDir = pwd;
+workDir = 'D:\fMRI\BrainImageNet\stim';
 stimDir = fullfile(workDir,'images');
 designDir = fullfile(workDir,'designMatrix');
 
@@ -75,27 +77,47 @@ trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Prepare params
 imgAngle = 12;
-fixOuterAngle = 0.3;
-fixInnerAngle = 0.2;
+fixOuterAngle = 0.2;
+fixInnerAngle = 0.1;
 readyDotColor = [255 0 0];
 % bkgColor = [128 128 128];
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 
+%%% Unresolved!!!!!!!!!!!!!
 % compute image pixel
-pixelPerMilimeterHor = 1024/390;
-pixelPerMilimeterVer = 768/295;
+%%% original setting
+% pixelPerMilimeterHor = 1024/390;
+% pixelPerMilimeterVer = 768/295;
+
+%%% change 1
+% pixelPerMilimeterHor = 1024/293;
+% pixelPerMilimeterVer = 768/222;
+
+%%% change 2  ÊÓ½Ç12¡ã
+pixelPerMilimeterHor = 1280/293;
+pixelPerMilimeterVer = 960/222;
+
+%%%coresponding to original seting & change 1
 imgPixelHor = pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2));
 imgPixelVer = pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2));
 fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
 fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
+
+%%% change4  ÆÌÂú
+% imgPixelHor = 960;
+% imgPixelVer = 960;
+% fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
+% fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
 
 %% Response keys setting
 PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
-likeKey = KbName('1!'); % Left hand:1!,2@
-disLikeKey = KbName('3#'); % Right hand: 3#,4$ 
+likeKey1 = KbName('1!'); % Left hand:1!
+likeKey2 = KbName('2@'); % Left hand:2@
+disLikeKey3 = KbName('3#'); % Right hand: 3#
+disLikeKey4 = KbName('4$'); % Right hand: 4$ 
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 2);
@@ -113,13 +135,11 @@ imgEnd = sprintf('%s/%s', 'instruction', 'instructionBye.jpg');
 startTexture = Screen('MakeTexture', wptr, imread(imgStart));
 endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
 
-%% Make stimuli texture
-stimTexture = zeros(nStim,1);
+%% Prepare stimuli
 for t = 1:nStim
     imgFile = fullfile(stimDir, runClass{t}, runStim{t});
-    img = imread(imgFile);
-    img = imresize(img, [imgPixelHor imgPixelVer]);
-    stimTexture(t) = Screen('MakeTexture', wptr, img);
+    imgTmp = imread(imgFile);
+    img{t} = imresize(imgTmp, [imgPixelHor imgPixelVer]);
 end
 
 %% Show instruction
@@ -129,7 +149,7 @@ Screen('Flip', wptr);
 while KbCheck(); end
 while true
     [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && keyCode(likeKey), break;
+    if keyIsDown && (keyCode(likeKey1) || keyCode(likeKey2)), break;
     end
 end
 
@@ -147,15 +167,19 @@ end
 
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
-onDur = 2 - 0.5*flipInterval; % on duration for a stimulus
-offDur = 2; % off duration for a stimulus
-runDur = 476; % duration for a run
+onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
+offDur = 3; % off duration for a stimulus
+runDur = 480; % duration for a run
 beginDur = 16; % beigining fixation duration
 endDur = 16; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
 tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
 
+% make and preload texture for the first trial 
+stimTexture = Screen('MakeTexture', wptr, img{1}); 
+Screen('PreloadTextures',wptr,stimTexture);
+    
 % Show begining fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
 Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
@@ -166,37 +190,42 @@ WaitSecs(beginDur);
 tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
-    Screen('DrawTexture', wptr, stimTexture(t));
+    Screen('DrawTexture', wptr, stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     tStim = Screen('Flip',wptr);
     trial(t, 6) = tStim - tStart; % timing error
     
+    % make texture for the next trial
+    Screen('Close',stimTexture); % closed the previous img texture
+    if t < nTrial
+        stimTexture = Screen('MakeTexture', wptr, img{t+1});
+        Screen('PreloadTextures',wptr,stimTexture);
+    end
+       
     % Show begining fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     tFix = Screen('Flip', wptr, tStim + onDur);
     
+    % Wait response
+    flag = 0;
     while KbCheck(), end % empty the key buffer
-    while GetSecs - tFix < offDur
+    while GetSecs - tStart < tEnd(t)
         [keyIsDown, tKey, keyCode] = KbCheck();       
         if keyIsDown
-            if keyCode(escKey), sca; return;
-            elseif keyCode(likeKey),    key = 1;
-            elseif keyCode(disLikeKey), key = -1;
-            else,  key = 0;  
+            if flag == 0 
+                if keyCode(escKey), sca; return;
+                elseif (keyCode(likeKey1) || keyCode(likeKey2)) ,    key = 1;
+                elseif (keyCode(disLikeKey3) || keyCode(disLikeKey4)), key = -1;
+                else,  key = 0;  
+                end
+                rt = tKey - tFix; % reaction time
+                trial(t, 4:5) = [key,rt];
+                flag = flag + 1;
             end
-            rt = tKey - tFix; % reaction time
-            trial(t, 4:5) = [key,rt];
-            break;
         end
     end
-    
-    % wait until tEnd
-    while GetSecs - tStart < tEnd(t)
-        [~, ~, keyCode] = KbCheck();
-        if keyCode(escKey), sca; return; end
-    end    
 end
 
 % Wait ending fixation
