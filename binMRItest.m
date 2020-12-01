@@ -20,8 +20,8 @@ nRun = 10;
 if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
 
 %% Data dir 
-workDir = 'D:\fMRI\BrainImageNet\stimTest';
-stimDir = fullfile(workDir,'images');
+workDir = pwd;
+stimDir = fullfile(workDir,'BIN-stimulus/test/images');
 % Make data dir
 dataDir = fullfile(workDir,'data');
 if ~exist(dataDir,'dir'), mkdir(dataDir), end
@@ -44,7 +44,7 @@ if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 
 %% Display
-imgAngle = 12;
+imgAngle = 16;
 fixOuterAngle = 0.2;% 0.3
 fixInnerAngle = 0.1;% 0.2
 % bkgColor = [128 128 128];
@@ -53,19 +53,9 @@ fixOuterColor = [0 0 0]; % color of fixation circular ring
 whiteFixation = [255 255 255]; % color of fixation circular point
 redFixation = [255 0 0]; % color of fixation circular point
 
-%%% Unresolved!!!!!!!!!!!!!
 % compute image pixel
-%%% original setting
-% pixelPerMilimeterHor = 1024/390;
-% pixelPerMilimeterVer = 768/295;
-
-%%% change 1
-% pixelPerMilimeterHor = 1024/293;
-% pixelPerMilimeterVer = 768/222;
-
-%%% change 2  ÊÓ½Ç12¡ã
-pixelPerMilimeterHor = 1280/293;
-pixelPerMilimeterVer = 960/222;
+pixelPerMilimeterHor = 1024/390;
+pixelPerMilimeterVer = 768/295;
 
 %%%coresponding to original seting & change 1
 imgPixelHor = pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2));
@@ -73,11 +63,6 @@ imgPixelVer = pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2));
 fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
 fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
 
-%%% change4 ÆÌÂú
-% imgPixelHor = 960;
-% imgPixelVer = 960;
-% fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
-% fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
 
 %% Response keys setting
 PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
@@ -211,7 +196,7 @@ for t = 1:nTrial
                 elseif (keyCode(cueKey1) || keyCode(cueKey2)) ,    key = 1;
                 else, key = 0; 
                 end
-                rt = tKey - tFix; % reaction time
+                rt = tKey - tStim; % reaction time
                 trial(t, 4:5) = [key,rt];
                 flag = flag + 1;
             end
