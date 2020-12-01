@@ -1,5 +1,3 @@
-
-
 function trial = binMRItrain(subID,sessID,runID)
 % function [subject,task] = binMRItrain(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
@@ -76,38 +74,22 @@ trial = zeros(nTrial, 6); % [onset, class, dur, key, rt]
 trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Prepare params
-imgAngle = 12;
+imgAngle = 16;
 fixOuterAngle = 0.2;
 fixInnerAngle = 0.1;
 readyDotColor = [255 0 0];
 % bkgColor = [128 128 128];
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 
-%%% Unresolved!!!!!!!!!!!!!
 % compute image pixel
-%%% original setting
-% pixelPerMilimeterHor = 1024/390;
-% pixelPerMilimeterVer = 768/295;
-
-%%% change 1
-% pixelPerMilimeterHor = 1024/293;
-% pixelPerMilimeterVer = 768/222;
-
-%%% change 2  ÊÓ½Ç12¡ã
-pixelPerMilimeterHor = 1280/293;
-pixelPerMilimeterVer = 960/222;
+pixelPerMilimeterHor = 1024/390;
+pixelPerMilimeterVer = 768/295;
 
 %%%coresponding to original seting & change 1
 imgPixelHor = pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2));
 imgPixelVer = pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2));
 fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
 fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
-
-%%% change4  ÆÌÂú
-% imgPixelHor = 960;
-% imgPixelVer = 960;
-% fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
-% fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
 
 %% Response keys setting
 PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
@@ -168,7 +150,7 @@ end
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
-offDur = 3; % off duration for a stimulus
+%offDur = 3; % off duration for a stimulus
 runDur = 480; % duration for a run
 beginDur = 16; % beigining fixation duration
 endDur = 16; % ending fixation duration
@@ -193,6 +175,7 @@ for t = 1:nTrial
     Screen('DrawTexture', wptr, stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
+    Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
     trial(t, 6) = tStim - tStart; % timing error
     
@@ -202,30 +185,37 @@ for t = 1:nTrial
         stimTexture = Screen('MakeTexture', wptr, img{t+1});
         Screen('PreloadTextures',wptr,stimTexture);
     end
-       
-    % Show begining fixation
+    
+    % Show fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
-    tFix = Screen('Flip', wptr, tStim + onDur);
+    Screen('DrawingFinished',wptr);
     
     % Wait response
-    flag = 0;
+    flag_press = 0; % flag to prevent subject repeating pressing keys
+    flag_flip  = 0; % flag to prevent screens repeating flipping, which will make fix points disappears
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStart < tEnd(t)
+        % Show fixation after onDur
+        if GetSecs - tStim > onDur && flag_flip == 0
+            Screen('Flip', wptr); % flip window to present fixation
+            flag_flip = flag_flip + 1;
+        end
+        % wait response
         [keyIsDown, tKey, keyCode] = KbCheck();       
         if keyIsDown
-            if flag == 0 
+            if flag_press == 0 
                 if keyCode(escKey), sca; return;
                 elseif (keyCode(likeKey1) || keyCode(likeKey2)) ,    key = 1;
                 elseif (keyCode(disLikeKey3) || keyCode(disLikeKey4)), key = -1;
                 else,  key = 0;  
                 end
-                rt = tKey - tFix; % reaction time
+                rt = tKey - tStim; % reaction time
                 trial(t, 4:5) = [key,rt];
-                flag = flag + 1;
+                flag_press = flag_press + 1;
             end
         end
-    end
+    end          
 end
 
 % Wait ending fixation
