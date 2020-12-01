@@ -4,8 +4,7 @@ function trial = binMRItrainBehavior(subID,sessID)
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]
 
-
-%% Check subject information
+%% Check subject information+
 % Check subject id
 if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
 % Check session id
@@ -100,7 +99,6 @@ idx = randperm(nStim);
 categoryName = categoryName(idx);
 exampleName = exampleName(idx);
 cond = cond(idx);
-jitter = unifrnd(1,1.5,nStim,1);
 
 % Split stimuli into nruns
 nruns = 4;
@@ -108,7 +106,6 @@ categoryName = reshape(categoryName, [],nruns);
 categoryID = reshape(categoryID, [],nruns);
 exampleName = reshape(exampleName, [],nruns);
 cond = reshape(cond, [],nruns);
-jitter = reshape(jitter, [],nruns);
 
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
@@ -151,7 +148,7 @@ for runID = 1:nruns
    
     % Collect trial info for this runID
     trial = zeros(nTrial, 5); % [onset, categoryID, cond, key, rt]
-    tEnd = cumsum(onDur + jitter(:,runID)); % end time of trials
+    tEnd = cumsum(onDur + resDur); % end time of trials
     trial(:,1) = [0; tEnd(1:end-1)]; % onset of trials
     trial(:,2:3) = [categoryID(:,runID),cond(:,runID)]; % category id and cond
   

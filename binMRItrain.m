@@ -1,5 +1,3 @@
-
-
 function trial = binMRItrain(subID,sessID,runID)
 % function [subject,task] = binMRItrain(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
@@ -22,9 +20,9 @@ if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 nRun = 10; 
 
 %% Data dir 
-workDir = pwd;
-stimDir = fullfile(workDir,'BIN-stimulus/train/images');
-designDir = fullfile(workDir,'BIN-stimulus/train/designMatrix');
+workDir = 'D:\fMRI\BrainImageNet\stim';
+stimDir = fullfile(workDir,'images');
+designDir = fullfile(workDir,'designMatrix');
 
 % Make data dir
 dataDir = fullfile(workDir,'data');
@@ -152,7 +150,7 @@ end
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
-offDur = 3; % off duration for a stimulus
+%offDur = 3; % off duration for a stimulus
 runDur = 480; % duration for a run
 beginDur = 16; % beigining fixation duration
 endDur = 16; % ending fixation duration
@@ -177,6 +175,7 @@ for t = 1:nTrial
     Screen('DrawTexture', wptr, stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
+    Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
     trial(t, 6) = tStim - tStart; % timing error
     
@@ -186,19 +185,26 @@ for t = 1:nTrial
         stimTexture = Screen('MakeTexture', wptr, img{t+1});
         Screen('PreloadTextures',wptr,stimTexture);
     end
-       
-    % Show begining fixation
+    
+    % Show fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
-    tFix = Screen('Flip', wptr, tStim + onDur);
+    Screen('DrawingFinished',wptr);
     
     % Wait response
-    flag = 0;
+    flag_press = 0; % flag to prevent subject repeating pressing keys
+    flag_flip  = 0; % flag to prevent screens repeating flipping, which will make fix points disappears
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStart < tEnd(t)
+        % Show fixation after onDur
+        if GetSecs - tStim > onDur && flag_flip == 0
+            Screen('Flip', wptr); % flip window to present fixation
+            flag_flip = flag_flip + 1;
+        end
+        % wait response
         [keyIsDown, tKey, keyCode] = KbCheck();       
         if keyIsDown
-            if flag == 0 
+            if flag_press == 0 
                 if keyCode(escKey), sca; return;
                 elseif (keyCode(likeKey1) || keyCode(likeKey2)) ,    key = 1;
                 elseif (keyCode(disLikeKey3) || keyCode(disLikeKey4)), key = -1;
@@ -206,10 +212,10 @@ for t = 1:nTrial
                 end
                 rt = tKey - tStim; % reaction time
                 trial(t, 4:5) = [key,rt];
-                flag = flag + 1;
+                flag_press = flag_press + 1;
             end
         end
-    end
+    end          
 end
 
 % Wait ending fixation

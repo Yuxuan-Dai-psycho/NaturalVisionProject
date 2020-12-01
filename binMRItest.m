@@ -20,8 +20,9 @@ nRun = 10;
 if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
 
 %% Data dir 
-workDir = pwd;
-stimDir = fullfile(workDir,'BIN-stimulus/test/images');
+workDir = 'D:\fMRI\BrainImageNet\stimTest';
+stimDir = fullfile(workDir,'images');
+
 % Make data dir
 dataDir = fullfile(workDir,'data');
 if ~exist(dataDir,'dir'), mkdir(dataDir), end
@@ -62,7 +63,6 @@ imgPixelHor = pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2));
 imgPixelVer = pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2));
 fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
 fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
-
 
 %% Response keys setting
 PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
@@ -145,7 +145,7 @@ trial(cond == 1000,3) = 1;
 
 % End timing of trials
 tEnd = trial(:, 1) + 3; 
-%% Parms for stimlus presentation and Trials
+%% Params for stimlus presentation and Trials
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 0.5 - 0.5*flipInterval; % on duration for a stimulus
 %offDur = 2.5; % off duration for a stimulus
@@ -167,15 +167,18 @@ for t = 1:nTrial
         Screen('DrawTexture', wptr, stimTexture);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+        Screen('DrawingFinished',wptr);
         Screen('Close',stimTexture); % closed the previous img texture
         
     elseif trial(t,2) == 1000 % show only red fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2  );
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, redFixation , [], 2);
+        Screen('DrawingFinished',wptr);
         
     else % show only red fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+        Screen('DrawingFinished',wptr);
     end
     tStim = Screen('Flip',wptr);
     trial(t, 6) = tStim - tStart; % timing error
@@ -183,22 +186,29 @@ for t = 1:nTrial
     % Show after stimulus fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
-    tFix = Screen('Flip', wptr, tStim + onDur);
+    Screen('DrawingFinished',wptr);
     
     % Wait response
-    flag = 0;
+    flag_press = 0; % flag to prevent subject repeating pressing keys
+    flag_flip  = 0; % flag to prevent screens repeating flipping, which will make fix points disappears
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStart < tEnd(t)
+        % Show fixation after onDur
+        if GetSecs - tStim > onDur && flag_flip == 0
+            Screen('Flip', wptr); % flip window to present fixation
+            flag_flip = flag_flip + 1;
+        end
+        % wait response
         [keyIsDown, tKey, keyCode] = KbCheck();       
         if keyIsDown
-            if flag == 0 
+            if flag_press == 0 
                 if keyCode(escKey), sca; return;
                 elseif (keyCode(cueKey1) || keyCode(cueKey2)) ,    key = 1;
                 else, key = 0; 
                 end
                 rt = tKey - tStim; % reaction time
                 trial(t, 4:5) = [key,rt];
-                flag = flag + 1;
+                flag_press = flag_press + 1;
             end
         end
     end
