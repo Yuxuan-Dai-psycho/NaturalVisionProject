@@ -3,7 +3,8 @@ function trial = binMRItest(subID, sessID, runID)
 % fMRI experiment for BrainImageNet test dataset
 % subID, subjet ID, integer[1-20]
 % runID, run ID, integer [1-10]
-% clc;clear;
+% workdir(or codeDir) -> sitmulus/instruciton/data 
+
 
 %% Check subject information
 % Check subject id
