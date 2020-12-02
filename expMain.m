@@ -16,3 +16,7 @@ binMRItrain(subID,sessID,1);clc;sca;
 % You should mannual change runID for each run
 binMRItest(subID,sessID,1);clc;sca;
 
+%% Run BIN behavior exp 
+% You should mannual change runID for each run
+binMRItrainBehavior(subID,sessID);clc;sca;
+

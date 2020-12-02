@@ -84,8 +84,8 @@ for t = 1:nStim
 end
 
 % Load instruction image
-imgStart = imread(fullfile(workDir, 'instruction', 'instructionStartTest.jpg'));
-imgEnd = imread(fullfile(workDir, 'instruction', 'instructionBye.jpg'));
+imgStart = imread(fullfile(workDir, 'instruction', 'testStart.JPG'));
+imgEnd = imread(fullfile(workDir, 'instruction', 'testEnd.JPG'));
 
 %% Show instruction
 startTexture = Screen('MakeTexture', wptr, imgStart);
