@@ -1,6 +1,8 @@
-%%======！！！！IMPORTANT 注意检查被试编号与session号！！！！=====
+%%======！！！！请务必不要搞错subID 和 sessID ！！！=====
 clear; 
 close all
+worDir = '/codeDir/in/your/computer';
+cd(workDir)
 
 %% Set subject and session info
 % You should manually input subject ID and session ID

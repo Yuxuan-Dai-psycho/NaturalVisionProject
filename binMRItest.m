@@ -192,7 +192,8 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
     Screen('DrawingFinished',wptr);
-    
+    Screen('Flip',wptr);
+
     % If subject have ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
     if rt
