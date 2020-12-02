@@ -3,7 +3,7 @@ function trial = binMRItrainBehavior(subID,sessID)
 % Memory test after BrianImageNet fMRI train experiment
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]
-
+% workdir(or codeDir) -> sitmulus/instruciton/data 
 %% Check subject information+
 % Check subject id
 if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
@@ -56,7 +56,6 @@ seenKey = KbName('j'); % J key for right hand
 % 2000 images are randomized and shown in four run(each with 500 images)
 % BIN.classID is ImageNet class id, 1000x1, cell array
 % BIN.stimulus is stimlus filename, 1000 x 80, cell array
-stimDir = fullfile(workDir,'stimulus','train','images');
 designDir = fullfile(workDir,'stimulus','train','designMatrix');
 load(fullfile(designDir,'BIN.mat'),'BIN');
 
@@ -88,7 +87,6 @@ cond = reshape(cond,[],nRun);
 imgAngle = 16;
 fixOuterAngle = 0.3;
 fixInnerAngle = 0.2;
-% readyDotColor = [255 0 0];
 
 % Visual angle to pixel
 pixelPerMilimeterHor = 1024/390;
@@ -109,6 +107,7 @@ fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
 nTrial = nStim/nRun;
 img = cell(nTrial,1);
+stimDir = fullfile(workDir,'stimulus','train','images');
 for runID = 1:nRun
     % Load instruciton and stimuli 
     imgStart = imread(fullfile(workDir, 'instruction', 'instructionStartTrain.jpg'));

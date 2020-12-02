@@ -5,6 +5,7 @@ function trial = binMRItrain(subID,sessID,runID)
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-10]
+% workdir(or codeDir) -> sitmulus/instruciton/data 
 
 %% Check subject information
 % Check subject id
@@ -39,7 +40,6 @@ if ~exist(subDir,'dir'), mkdir(subDir),end
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
-
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
 % Screen('Preference','VisualDebugLevel',4);
@@ -65,7 +65,6 @@ inanimateKey2 = KbName('4$'); % Right hand: 4$
 
 %% Make design for this session
 % Set design dir
-stimDir = fullfile(workDir,'stimulus','train','images');
 designDir = fullfile(workDir,'stimulus','train','designMatrix');
 designFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
@@ -110,6 +109,7 @@ fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi
 fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 
 % Load stimuli
+stimDir = fullfile(workDir,'stimulus','train','images');
 img = cell(nStim,1);
 for t = 1:nStim
     imgFile = fullfile(stimDir, runClass{t}, runStim{t});
