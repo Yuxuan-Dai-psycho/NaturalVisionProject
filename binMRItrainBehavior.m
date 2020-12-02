@@ -11,9 +11,8 @@ if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 
 %% Data dir
+% Make work dir
 workDir = pwd;
-stimDir = fullfile(workDir,'BIN-stimulus/train/images');
-designDir = fullfile(workDir,'BIN-stimulus/train/designMatrix');
 
 % Make data dir
 dataDir = fullfile(workDir,'data');
@@ -36,9 +35,9 @@ sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 %% Screen setting
-Screen('Preference', 'SkipSyncTests', 2);
-Screen('Preference','VisualDebugLevel',4);
-Screen('Preference','SuppressAllWarnings',1);
+Screen('Preference', 'SkipSyncTests', 1);
+% Screen('Preference','VisualDebugLevel',4);
+% Screen('Preference','SuppressAllWarnings',1);
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
@@ -46,7 +45,7 @@ bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 HideCursor;
 
 %% Response keys setting
-PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
+% PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 escKey = KbName('ESCAPE');
 notSeenKey = KbName('f'); % F key for left hand
@@ -55,10 +54,11 @@ seenKey = KbName('j'); % J key for right hand
 %% Make desgin for this session
 % 1000 category image from next subjects are loaded as control
 % 2000 images are randomized and shown in four run(each with 500 images)
-
-load(fullfile(designDir,'BIN.mat'),'BIN');
 % BIN.classID is ImageNet class id, 1000x1, cell array
 % BIN.stimulus is stimlus filename, 1000 x 80, cell array
+stimDir = fullfile(workDir,'stimulus','train','images');
+designDir = fullfile(workDir,'stimulus','train','designMatrix');
+load(fullfile(designDir,'BIN.mat'),'BIN');
 
 % session id of this subject and next subejct
 sess = 4* [subID-1,subID] + sessID;
@@ -108,14 +108,14 @@ endDur = 4; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
 nTrial = nStim/nRun;
-img = zeros(imgPixelHor,imgPixelVer,3,nTrial);
+img = cell(nTrial,1);
 for runID = 1:nRun
     % Load instruciton and stimuli 
-    imgStart = imread(sprintf('%s/%s', 'instruction', 'instructionStartTrain.jpg'));
-    imgEnd = imread(sprintf('%s/%s', 'instruction', 'instructionBye.jpg'));
+    imgStart = imread(fullfile(workDir, 'instruction', 'instructionStartTrain.jpg'));
+    imgEnd = imread(fullfile(workDir, 'instruction', 'instructionBye.jpg'));
     for t = 1:nTrial
         imgFile = fullfile(stimDir, categoryName{t,runID}, exampleName{t,runID});
-        img(:,:,:,t) = imresize(imread(imgFile), [imgPixelHor imgPixelVer]);
+        img{t} = imresize(imread(imgFile), [imgPixelHor imgPixelVer]);
     end
 
     % Show instruction and wait ready signal from subject
@@ -143,7 +143,7 @@ for runID = 1:nRun
     tStart = GetSecs;
     for t = 1:nTrial
         % Show stimulus with fixation
-        stimTexture = Screen('MakeTexture', wptr, img(:,:,:,t));
+        stimTexture = Screen('MakeTexture', wptr, img{t});
         Screen('PreloadTextures',wptr,stimTexture);
         Screen('DrawTexture', wptr, stimTexture);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
@@ -163,7 +163,7 @@ for runID = 1:nRun
                 elseif keyCode(seenKey)
                     key = 1; rt = tKey - tStim; break;
                 elseif keyCode(notSeenKey)
-                    key = -1; rt = tKey - tStim; break;
+                    key = -1; rt = tKey - tStim;break;
                 end
             end
         end
@@ -205,8 +205,12 @@ for runID = 1:nRun
         sprintf('sub%02d_sess%02d_run%02d_beh.mat',subID,sessID,runID));
     fprintf('Data were saved to: %s\n',dataFile);
     save(dataFile);
+    % Print sucess info
+    fprintf('BINbehavior subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
 end
-
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
+
+
+

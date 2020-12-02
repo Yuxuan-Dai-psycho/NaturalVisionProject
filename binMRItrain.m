@@ -15,11 +15,9 @@ if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 nRun = 10;
 
-%% Data dir: DO CHANGE HERE
+%% Data dir
 % Make work dir
-workDir = 'D:\fMRI\BrainImageNet\stim';
-stimDir = fullfile(workDir,'images');
-designDir = fullfile(workDir,'designMatrix');
+workDir = pwd;
 
 % Make data dir
 dataDir = fullfile(workDir,'data');
@@ -66,6 +64,9 @@ inanimateKey2 = KbName('4$'); % Right hand: 4$
 
 
 %% Make design for this session
+% Set design dir
+stimDir = fullfile(workDir,'stimulus','train','images');
+designDir = fullfile(workDir,'stimulus','train','designMatrix');
 designFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
 if ~exist(designFile,'file')
@@ -116,8 +117,8 @@ for t = 1:nStim
 end
 
 % Load  instruction
-imgStart = imread(sprintf('%s/%s', 'instruction', 'instructionStartTrain.jpg'));
-imgEnd = imread(sprintf('%s/%s', 'instruction', 'instructionBye.jpg'));
+imgStart = imread(fullfile(workDir, 'instruction', 'instructionStartTrain.jpg'));
+imgEnd = imread(fullfile(workDir, 'instruction', 'instructionBye.jpg'));
 
 %% Show instruction
 startTexture = Screen('MakeTexture', wptr, imgStart);
