@@ -194,8 +194,7 @@ for t = 1:nTrial
             end
         end
     end
-    
-    
+  
     % Show fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);

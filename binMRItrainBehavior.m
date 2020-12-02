@@ -73,6 +73,7 @@ cond = [ones(1000,1); zeros(1000,1)];
 % Randomize stimulus
 idx = randperm(nStim);
 categoryName = categoryName(idx);
+categoryID  = categoryID(idx);
 exampleName = exampleName(idx);
 cond = cond(idx);
 
