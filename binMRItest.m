@@ -238,4 +238,6 @@ resultFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%2d_run%02d.mat',subID,sessID,runID));
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
+fprintf('BINtest subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
+
 
