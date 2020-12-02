@@ -252,4 +252,6 @@ resultFile = fullfile(sessDir,...
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
+fprintf('BINtrain subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
+
 
