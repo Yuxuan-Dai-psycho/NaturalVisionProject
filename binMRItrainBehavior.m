@@ -111,8 +111,8 @@ img = cell(nTrial,1);
 stimDir = fullfile(workDir,'stimulus','train','images');
 for runID = 1:nRun
     % Load instruciton and stimuli 
-    imgStart = imread(fullfile(workDir, 'instruction', 'instructionStartTrain.jpg'));
-    imgEnd = imread(fullfile(workDir, 'instruction', 'instructionBye.jpg'));
+    imgStart = imread(fullfile(workDir, 'instruction', 'behStart.JPG'));
+    imgEnd = imread(fullfile(workDir, 'instruction', 'behEnd.JPG'));
     for t = 1:nTrial
         imgFile = fullfile(stimDir, categoryName{t,runID}, exampleName{t,runID});
         img{t} = imresize(imread(imgFile), [imgPixelHor imgPixelVer]);
