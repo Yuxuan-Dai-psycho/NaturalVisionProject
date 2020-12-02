@@ -1,14 +1,10 @@
 function trial = binMRItrain(subID,sessID,runID)
 % function [subject,task] = binMRItrain(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
+% subject do animate vs. inanimate discrimination task
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-10]
-
-%% Arguments
-% if nargin < 3, subID = 1; end
-% if nargin < 2, sessID = 1; end
-% if nargin < 1, runID = 1; end
 
 %% Check subject information
 % Check subject id
@@ -19,7 +15,7 @@ if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 nRun = 10;
 
-%% Data dir
+%% Data dir: DO CHANGE HERE
 % Make work dir
 workDir = 'D:\fMRI\BrainImageNet\stim';
 stimDir = fullfile(workDir,'images');
@@ -47,9 +43,9 @@ if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 
 %% Screen setting
-Screen('Preference', 'SkipSyncTests', 2);
-Screen('Preference','VisualDebugLevel',4);
-Screen('Preference','SuppressAllWarnings',1);
+Screen('Preference', 'SkipSyncTests', 1);
+% Screen('Preference','VisualDebugLevel',4);
+% Screen('Preference','SuppressAllWarnings',1);
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
@@ -57,14 +53,16 @@ screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 HideCursor;
 
 %% Response keys setting
-PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
+% PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
-likeKey1 = KbName('1!'); % Left hand:1!
-likeKey2 = KbName('2@'); % Left hand:2@
-disLikeKey3 = KbName('3#'); % Right hand: 3#
-disLikeKey4 = KbName('4$'); % Right hand: 4$
+
+% Left hand for animate and right hand for inanimate
+animateKey1 = KbName('1!'); % Left hand:1!
+animateKey2 = KbName('2@'); % Left hand:2@
+inanimateKey1 = KbName('3#'); % Right hand: 3#
+inanimateKey2 = KbName('4$'); % Right hand: 4$
 
 
 %% Make design for this session
@@ -111,11 +109,10 @@ fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi
 fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 
 % Load stimuli
-img = zeros(imgPixelHor,imgPixelVer,3,nStim);
+img = cell(nStim,1);
 for t = 1:nStim
     imgFile = fullfile(stimDir, runClass{t}, runStim{t});
-    imgTmp = imread(imgFile);
-    img(:,:,:,t)  = imresize(imgTmp, [imgPixelHor imgPixelVer]);
+    img{t} = imresize(imread(imgFile), [imgPixelHor imgPixelVer]);
 end
 
 % Load  instruction
@@ -128,13 +125,13 @@ Screen('PreloadTextures',wptr,startTexture);
 Screen('DrawTexture', wptr, startTexture);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
-Screen('Close',startTexture); % closed the previous img texture
+Screen('Close',startTexture); 
 
 % Wait ready signal from subject
 while KbCheck(); end
 while true
     [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && (keyCode(likeKey1) || keyCode(likeKey2)), break;
+    if keyIsDown && (keyCode(animateKey1) || keyCode(animateKey2)), break;
     end
 end
 readyDotColor = [255 0 0];
@@ -172,7 +169,7 @@ WaitSecs(beginDur);
 tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
-    stimTexture = Screen('MakeTexture', wptr, img(:,:,:,t));
+    stimTexture = Screen('MakeTexture', wptr, img{t});
     Screen('PreloadTextures',wptr,stimTexture);
     Screen('DrawTexture', wptr, stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
@@ -182,16 +179,16 @@ for t = 1:nTrial
     Screen('Close',stimTexture);
     trial(t, 6) = tStim - tStart; % timing error
     
-    % If subject respond in stimulus presenting, we record it
+    % If subject responds in stimulus presenting, we record it
     key = 0; rt = 0;
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStim < onDur
         [keyIsDown, tKey, keyCode] = KbCheck();
         if keyIsDown
             if keyCode(escKey),sca; return;
-            elseif keyCode(likeKey1) || keyCode(likeKey2)
+            elseif keyCode(animateKey1) || keyCode(animateKey2)
                 key = 1; rt = tKey - tStim;
-            elseif keyCode(disLikeKey3)|| keyCode(disLikeKey4)
+            elseif keyCode(inanimateKey1)|| keyCode(inanimateKey2)
                 key = -1; rt = tKey - tStim;
             end
         end
@@ -204,10 +201,10 @@ for t = 1:nTrial
     Screen('DrawingFinished',wptr);
     Screen('Flip', wptr);
     
-    % If subject have ready responded in stimtulus presenting, we'll not
+    % If subject has ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
     if rt
-        while KbCheck(), end % empty the key buffer
+        while KbCheck(), end 
         while GetSecs - tStart < tEnd(t)
             [keyIsDown, ~, keyCode] = KbCheck();
             if keyIsDown && keyCode(escKey), sca; return; end
@@ -218,9 +215,9 @@ for t = 1:nTrial
             [keyIsDown, tKey, keyCode] = KbCheck();
             if keyIsDown
                 if keyCode(escKey),sca; return;
-                elseif keyCode(likeKey1) || keyCode(likeKey2)
+                elseif keyCode(animateKey1) || keyCode(animateKey2)
                     key = 1; rt = tKey - tStim;
-                elseif keyCode(disLikeKey3)|| keyCode(disLikeKey4)
+                elseif keyCode(inanimateKey1)|| keyCode(inanimateKey2)
                     key = -1; rt = tKey - tStim;
                 end
             end
@@ -251,7 +248,7 @@ resultFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID,runID));
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
-
+% Print sucess info
 fprintf('BINtrain subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
 
 

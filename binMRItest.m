@@ -40,10 +40,9 @@ sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 %% Screen setting
-PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
-Screen('Preference', 'SkipSyncTests', 2);
-Screen('Preference','VisualDebugLevel',4);
-Screen('Preference','SuppressAllWarnings',1);
+Screen('Preference', 'SkipSyncTests', 1);
+% Screen('Preference','VisualDebugLevel',4);
+% Screen('Preference','SuppressAllWarnings',1);
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
@@ -51,6 +50,7 @@ bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 HideCursor;
 
 %% Response keys setting
+% PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
@@ -77,10 +77,9 @@ fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi
 imgName = extractfield(dir(stimDir), 'name');
 imgName = imgName(3:end);
 nStim = length(imgName);
-img = zeros(imgPixelHor,imgPixelVer,3,nStim);
+img = cell(nStim,1);
 for t = 1:nStim
-    imgTmp = imread( fullfile(stimDir, imgName{t}));
-      img(:,:,:,t)  = imresize(imgTmp, [imgPixelHor imgPixelVer]);
+    img{t}  = imresize(imread(fullfile(stimDir, imgName{t})), [imgPixelHor imgPixelVer]);
 end
 
 % Load instruction image
@@ -154,12 +153,12 @@ WaitSecs(beginDur);
 tStart = GetSecs;
 for t = 1:nTrial
     if trial(t,2) <= 120  % show stimulus with fixation
-        stimTexture = Screen('MakeTexture', wptr, img(:,:,:,trial(t,2)));
+        stimTexture = Screen('MakeTexture', wptr, img{trial(t,2)});
         Screen('DrawTexture', wptr, stimTexture);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation ,[], 2);
         Screen('DrawingFinished',wptr);
-        Screen('Close',stimTexture); % closed the previous img texture
+        Screen('Close',stimTexture);
         
     elseif trial(t,2) == 1000 % show only red fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2  );
@@ -202,7 +201,7 @@ for t = 1:nTrial
             if keyIsDown && keyCode(escKey), sca; return; end
         end
     else
-        while KbCheck(), end % empty the key buffer
+        while KbCheck(), end 
         while GetSecs - tStart < tEnd(t)
             [keyIsDown, tKey, keyCode] = KbCheck();
             if keyIsDown
@@ -238,6 +237,7 @@ resultFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%2d_run%02d.mat',subID,sessID,runID));
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
+% Print sucess info
 fprintf('BINtest subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
 
 
