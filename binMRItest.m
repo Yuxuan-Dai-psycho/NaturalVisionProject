@@ -5,7 +5,6 @@ function trial = binMRItest(subID, sessID, runID)
 % runID, run ID, integer [1-10]
 % workdir(or codeDir) -> sitmulus/instruciton/data 
 
-
 %% Check subject information
 % Check subject id
 if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
@@ -97,10 +96,8 @@ Screen('Close',startTexture);
 while KbCheck(); end
 while true
     [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && (keyCode(cueKey1) || keyCode(cueKey2)), break;
-    end
+    if keyIsDown && (keyCode(cueKey1) || keyCode(cueKey2)), break;  end
 end
-% Show ready signal
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, redFixation, [], 2);
 Screen('Flip', wptr);
 
