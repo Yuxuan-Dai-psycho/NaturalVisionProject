@@ -35,22 +35,15 @@ if ~exist(subDir,'dir'), mkdir(subDir),end
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
-
-%% Prepare params
-imgAngle = 12;
-fixOuterAngle = 0.3;
-fixInnerAngle = 0.2;
-% readyDotColor = [255 0 0];
-% bkgColor = [128 128 128];
+%% Screen setting
+Screen('Preference', 'SkipSyncTests', 2);
+Screen('Preference','VisualDebugLevel',4);
+Screen('Preference','SuppressAllWarnings',1);
+screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
-
-% compute image pixel
-pixelPerMilimeterHor = 1024/390;
-pixelPerMilimeterVer = 768/295;
-imgPixelHor = pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2));
-imgPixelVer = pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2));
-fixOuterSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2));
-fixInnerSize = pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2));
+[wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
+[xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
+HideCursor;
 
 %% Response keys setting
 PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
@@ -59,31 +52,15 @@ escKey = KbName('ESCAPE');
 notSeenKey = KbName('f'); % F key for left hand
 seenKey = KbName('j'); % J key for right hand
 
-%% Screen setting
-Screen('Preference', 'SkipSyncTests', 2);
-Screen('Preference','VisualDebugLevel',4);
-Screen('Preference','SuppressAllWarnings',1);
-screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
-[wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
-[xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
-HideCursor;
-
-%% Create instruction texture
-% Makes instruction texture
-imgStart = sprintf('%s/%s', 'instruction', 'instructionStartTrain.jpg');
-imgEnd = sprintf('%s/%s', 'instruction', 'instructionBye.jpg');
-startTexture = Screen('MakeTexture', wptr, imread(imgStart));
-endTexture = Screen('MakeTexture', wptr, imread(imgEnd));
-
-%% Stimulus for this session
+%% Make desgin for this session
 % 1000 category image from next subjects are loaded as control
-% 2000 images are randomized and shown in four run(each with 500 images) 
+% 2000 images are randomized and shown in four run(each with 500 images)
 
 load(fullfile(designDir,'BIN.mat'),'BIN');
-% BIN.classID  % ImageNet class id, 1000x1, cell array
-% BIN.stimulus  % 1000 x 80, cell array
+% BIN.classID is ImageNet class id, 1000x1, cell array
+% BIN.stimulus is stimlus filename, 1000 x 80, cell array
 
-% session id of this subject and next subejct  
+% session id of this subject and next subejct
 sess = 4* [subID-1,subID] + sessID;
 sess =  mod(sess,80);
 % 1000 category and each has an example
@@ -100,117 +77,136 @@ categoryName = categoryName(idx);
 exampleName = exampleName(idx);
 cond = cond(idx);
 
-% Split stimuli into nruns
-nruns = 4;
-categoryName = reshape(categoryName, [],nruns);
-categoryID = reshape(categoryID, [],nruns);
-exampleName = reshape(exampleName, [],nruns);
-cond = reshape(cond, [],nruns);
+% Split stimuli into N runs
+nRun = 4;
+categoryName = reshape(categoryName,[],nRun);
+categoryID = reshape(categoryID,[],nRun);
+exampleName = reshape(exampleName,[],nRun);
+cond = reshape(cond,[],nRun);
+
+%% Load stimulus and instruction
+imgAngle = 16;
+fixOuterAngle = 0.3;
+fixInnerAngle = 0.2;
+% readyDotColor = [255 0 0];
+
+% Visual angle to pixel
+pixelPerMilimeterHor = 1024/390;
+pixelPerMilimeterVer = 768/295;
+imgPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2)));
+imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
+fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
+fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
-beginDur = 2; % beigining fixation duration
-endDur = 0.5; % ending duration of each trial
-resDur = 2; % response duration of each trial
+maskDur = 0.2; % ending duration of each trial
+maxDur = 2; % max duration of a trial
+beginDur = 4; % beigining fixation duration
+endDur = 4; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
-nTrial = nStim/nruns;
-
-for runID = 1:nruns
-    % Make stimuli texture for this run
+nTrial = nStim/nRun;
+img = zeros(imgPixelHor,imgPixelVer,3,nTrial);
+for runID = 1:nRun
+    % Load instruciton and stimuli 
+    imgStart = imread(sprintf('%s/%s', 'instruction', 'instructionStartTrain.jpg'));
+    imgEnd = imread(sprintf('%s/%s', 'instruction', 'instructionBye.jpg'));
     for t = 1:nTrial
         imgFile = fullfile(stimDir, categoryName{t,runID}, exampleName{t,runID});
-        imgTmp = imread(imgFile);
-        img{t} = imresize(imgTmp, [imgPixelHor imgPixelVer]);
+        img(:,:,:,t) = imresize(imread(imgFile), [imgPixelHor imgPixelVer]);
     end
-    
-    % make and preload texture for the first trial 
-    stimTexture = Screen('MakeTexture', wptr, img{1}); 
-    Screen('PreloadTextures',wptr,stimTexture);
-    
-    % Show instruction
+
+    % Show instruction and wait ready signal from subject
+    startTexture = Screen('MakeTexture', wptr, imgStart);
     Screen('DrawTexture', wptr, startTexture);
     Screen('Flip', wptr);
-    % Wait ready signal from subject
+    Screen('Close',startTexture);
     while KbCheck(); end
     while true
         [keyIsDown,~,keyCode] = KbCheck();
-        if keyIsDown && keyCode(seenKey), break;
-        end
+        if keyIsDown && keyCode(seenKey), break; end
     end
     
     % Show begining fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
     Screen('Flip',wptr);
     WaitSecs(beginDur);
-   
-    % Collect trial info for this runID
+    
+    % Make design
     trial = zeros(nTrial, 5); % [onset, categoryID, cond, key, rt]
-    tEnd = cumsum(onDur + resDur); % end time of trials
-    trial(:,1) = [0; tEnd(1:end-1)]; % onset of trials
     trial(:,2:3) = [categoryID(:,runID),cond(:,runID)]; % category id and cond
-  
-    % Show stimulus
+    
+    % Show stimulus for each trial
     tStart = GetSecs;
-    for t = 1:nTrial        
+    for t = 1:nTrial
         % Show stimulus with fixation
+        stimTexture = Screen('MakeTexture', wptr, img(:,:,:,t));
+        Screen('PreloadTextures',wptr,stimTexture);
         Screen('DrawTexture', wptr, stimTexture);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
         Screen('DrawingFinished',wptr);
         tStim = Screen('Flip',wptr);
+        Screen('Close',stimTexture);  
+        trial(t,1) = tStim - tStart;
         
-        % make texture for the next trial
-        Screen('Close',stimTexture); % closed the previous img texture
-        if t < nTrial
-        	stimTexture = Screen('MakeTexture', wptr, img{t+1});
-        	Screen('PreloadTextures',wptr,stimTexture);
+        % Record response while stimulus is on
+        key = 0; rt = 0;
+        while KbCheck(), end % empty the key buffer
+        while GetSecs - tStim < onDur
+            [keyIsDown, tKey, keyCode] = KbCheck();
+            if keyIsDown
+                if keyCode(escKey),sca; return;
+                elseif keyCode(seenKey)
+                    key = 1; rt = tKey - tStim; break;
+                elseif keyCode(notSeenKey)
+                    key = -1; rt = tKey - tStim; break;
+                end
+            end
         end
         
         % Show fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
         Screen('DrawingFinished',wptr);
-        tFix = Screen('Flip', wptr, tStim + onDur);
+        tFix = Screen('Flip', wptr);
         
-        while KbCheck(), end % empty the key buffer
-        while GetSecs - tStart < resDur
-            [keyIsDown, tKey, keyCode] = KbCheck();
-            if keyIsDown
-                if keyCode(escKey), sca; return;
-                elseif keyCode(seenKey),    key = 1;
-                elseif keyCode(notSeenKey), key = -1;
-                else,  key = 0;
+        if rt % If subject already responds,just show fixation with short time
+            while GetSecs - tFix < maskDur, end
+        else % if subejct have not responded, wait the response until the end of the trial
+            while GetSecs - tStim < maxDur
+                [keyIsDown, tKey, keyCode] = KbCheck();
+                if keyIsDown
+                    if keyCode(escKey),sca; return;
+                    elseif keyCode(seenKey)
+                        key = 1; rt = tKey - tStim; break;
+                    elseif keyCode(notSeenKey)
+                        key = -1; rt = tKey - tStim; break;
+                    end
                 end
-                rt = tKey - tFix; % reaction time
-                trial(t,4:5) = [key,rt];
-                break;
             end
         end
-        WaitSecs(endDur);
+        trial(t, 4:5) = [key,rt];
     end
     
     % Wait ending fixation
+    endTexture = Screen('MakeTexture', wptr, imgEnd);
     Screen('DrawTexture', wptr, endTexture);
-    Screen('Flip', wptr);   
-    % Wait ready signal from subject
-    while KbCheck(); end
-    while true
-        [keyIsDown,~,keyCode] = KbCheck();
-        if keyIsDown && keyCode(seenKey), break;
-        end
-    end
-        
-    %% Save data for this runID
+    Screen('Flip', wptr);
+    Screen('Close',endTexture);
+    WaitSecs(endDur);
+    
+    % Save data for this runID
+    clear img imgStart imgEnd
     dataFile = fullfile(sessDir,...
         sprintf('sub%02d_sess%02d_run%02d_beh.mat',subID,sessID,runID));
     fprintf('Data were saved to: %s\n',dataFile);
-    save(dataFile,'trial','sessID','subID','runID');  
+    save(dataFile);
 end
 
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
-    
