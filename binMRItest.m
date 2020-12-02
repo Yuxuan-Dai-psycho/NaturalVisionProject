@@ -16,8 +16,7 @@ if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
 
 %% Data dir
 % Make work dir
-workDir = 'D:\fMRI\BrainImageNet\stimTest';
-stimDir = fullfile(workDir,'images');
+workDir = pwd;
 
 % Make data dir
 dataDir = fullfile(workDir,'data');
@@ -74,6 +73,7 @@ fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi
 fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 
 % Load stimulus
+stimDir = fullfile(workDir,'stimulus','test','images');
 imgName = extractfield(dir(stimDir), 'name');
 imgName = imgName(3:end);
 nStim = length(imgName);
@@ -83,8 +83,8 @@ for t = 1:nStim
 end
 
 % Load instruction image
-imgStart = imread(sprintf('%s/%s', 'instruction', 'instructionStartTest.jpg'));
-imgEnd = imread(sprintf('%s/%s', 'instruction', 'instructionBye.jpg'));
+imgStart = imread(fullfile(workDir, 'instruction', 'instructionStartTest.jpg'));
+imgEnd = imread(fullfile(workDir, 'instruction', 'instructionBye.jpg'));
 
 %% Show instruction
 startTexture = Screen('MakeTexture', wptr, imgStart);
