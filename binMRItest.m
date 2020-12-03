@@ -194,13 +194,11 @@ for t = 1:nTrial
     % If subject have ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
     if rt
-        while KbCheck(), end
         while GetSecs - tStart < tEnd(t)
             [keyIsDown, ~, keyCode] = KbCheck();
             if keyIsDown && keyCode(escKey), sca; return; end
         end
     else
-        while KbCheck(), end 
         while GetSecs - tStart < tEnd(t)
             [keyIsDown, tKey, keyCode] = KbCheck();
             if keyIsDown
