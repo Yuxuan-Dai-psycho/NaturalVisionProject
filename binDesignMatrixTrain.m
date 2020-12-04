@@ -77,6 +77,7 @@ BIN.superClassID = superClassID;% superclass class id, 1000x1, int array
 BIN.stimulus = stimulus; % 1000 x 80, cell array
 BIN.paradigmSuperClass = optSeqSuperClass; % 1000(class) x 80(session) x 3 array
 BIN.paradigmClass = optSeqClass; % 1000(class) x 80(session) x 3  array
+BIN.date = date; 
 
 % Save BIN to design dir
 save(fullfile(designDir,'BIN.mat'), 'BIN');
