@@ -231,15 +231,19 @@ Screen('CloseAll');
 
 %% Evaluate the response
 % trial, nTial * 6 array; [onset,cond,trueAnswer, key, rt, timingError].
+% Make target matrix nTrial x nCond
 target = zeros(nTrial,2);
 target(:,1) = trial(:,3) == 1;
 target(:,2) = trial(:,3) ~= 1;
 
+% Make response matrix nTrial x nCond
 response = zeros(nTrial,2);
 response(:,1) = trial(:,4) == 1;
 response(:,2) = trial(:,4) ~= 1;
 
+% Summarize the response with figure 
 response_evaluation(target, response,{'Color change', 'Color unchange'});
+
 % save figure
  figureFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_run%02d.jpg',subID,sessID,runID));
