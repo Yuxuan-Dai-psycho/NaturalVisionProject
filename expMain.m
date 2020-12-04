@@ -10,13 +10,16 @@ subName = 'shenhuadong';subID = 4; sessID = 1;
 
 %% Run BIN train exp: 
 % You should mannual change runID for each run
-binMRItrain(subID,sessID,1);clc;sca;
+close all;sca;
+binMRItrain(subID,sessID,1);
 
 %% Run BIN test exp 
 % You should mannual change runID for each run
-binMRItest(subID,sessID,1);clc;sca;
+close all;sca;
+binMRItest(subID,sessID,1);
 
 %% Run BIN behavior exp 
 % You should mannual change runID for each run
-binMRItrainBehavior(subID,sessID);clc;sca;
+close all;sca;
+binMRItrainBehavior(subID,sessID);
 
