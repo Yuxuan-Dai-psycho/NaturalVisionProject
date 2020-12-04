@@ -117,8 +117,8 @@ trial = zeros(nTrial, 6);
 
 % Randomize condition: 1-120 images
 cond = 1:nTrial;% total trials
-cond(121:135) = 1000; % Null trials with red fix
-cond(136:nTrial) = 2000; % Null trials with white fix
+cond(121:135) = 1000; % Null trials with white fix
+cond(136:nTrial) = 2000; % Null trials with red fix
 while true
     cond = cond(randperm(length(cond)));
     tmp = diff(cond);
@@ -129,8 +129,10 @@ end
 onset = (0:nTrial-1)*3;% each trial last 3s
 trial(:,1:2) = [onset',cond']; % [onset, condition]
 
-% True answer for red fix
-trial(cond == 1000,3) = 1;
+% True answer for color change of fix (white->red and red-fix)
+label = cond;
+label(label < 2000) = 1000;
+trial(:,3) =  logical([0, diff(label)]); 
 
 % End timing of trials
 tEnd = trial(:, 1) + 3;
@@ -150,7 +152,7 @@ WaitSecs(beginDur);
 % Show stimulus
 tStart = GetSecs;
 for t = 1:nTrial
-    if trial(t,2) <= 120  % show stimulus with fixation
+    if trial(t,2) <= 120  % Show stimulus with fixation
         stimTexture = Screen('MakeTexture', wptr, img{trial(t,2)});
         Screen('DrawTexture', wptr, stimTexture);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
@@ -158,19 +160,18 @@ for t = 1:nTrial
         Screen('DrawingFinished',wptr);
         Screen('Close',stimTexture);
         
-    elseif trial(t,2) == 1000 % show only red fixation
+    elseif trial(t,2) == 1000 % show only white fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2  );
-        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, redFixation , [], 2);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation, [], 2);
         Screen('DrawingFinished',wptr);
         
-    else % show only white fixation
+    else % show only red fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, redFixation, [], 2);
         Screen('DrawingFinished',wptr);
     end
     tStim = Screen('Flip',wptr);
     trial(t, 6) = tStim - tStart; % timing error
-    
     
     % If subject respond in stimulus presenting, we record it
     key = 0; rt = 0;
@@ -228,13 +229,43 @@ WaitSecs(2);
 ShowCursor;
 Screen('CloseAll');
 
+%% Evaluate the response
+% trial, nTial * 6 array; [onset,cond,trueAnswer, key, rt, timingError].
+target = zeros(nTrial,2);
+target(:,1) = trial(:,3) == 1;
+target(:,2) = trial(:,3) ~= 1;
+
+response = zeros(nTrial,2);
+response(:,1) = trial(:,4) == 1;
+response(:,2) = trial(:,4) ~= 1;
+
+response_evaluation(target, response,{'Color change', 'Color unchange'});
+% save figure
+ figureFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%02d_run%02d.jpg',subID,sessID,runID));
+print(figureFile,'-djpeg');
+
 %% Save data for this run
 clear img imgStart imgEnd
 resultFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%2d_run%02d.mat',subID,sessID,runID));
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
-% Print sucess info
-fprintf('BINtest subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
+% Print  info
+fprintf('BINtest sub:%d, sess:%d, run:%d ---- DONE!\n', subID, sessID,runID);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
