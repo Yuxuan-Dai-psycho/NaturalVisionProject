@@ -1,4 +1,4 @@
-function [c,cm,ind,per] = confusion(targets,outputs)
+function [c,cm,ind,per] = binConfusion(targets,outputs)
 %CONFUSION Classification confusion matrix.
 %
 %  [C,CM,IND,PER] = <a href="matlab:doc confusion">confusion</a>(T,Y) takes an SxQ target and output matrices
@@ -15,10 +15,10 @@ function [c,cm,ind,per] = confusion(targets,outputs)
 %
 %  PER is an Sx4 matrix where each ith row summarizes these percentages
 %  associated with the ith class:
-%    S(i,1) = false negative rate = false negatives / all output negatives
-%    S(i,2) = false positive rate = false positives / all output positives
-%    S(i,3) = true positive rate = true positives / all output positives
-%    S(i,4) = true negative rate = true negatives / all output negatives
+%    S(i,1) = false negative rate(miss) = false negatives / all target positives
+%    S(i,2) = false positive rate(false alarm) = false positives / all target negatives
+%    S(i,3) = true positive rate(hit) = true positives / all target positives
+%    S(i,4) = true negative rate(correct reject) = true negatives / all target negatives
 %
 %  <a href="matlab:doc confusion">confusion</a>(T,Y) can also take a row vector T of 0/1 target values and a
 %  corresponding row vector Y output values.  This case is treated as
@@ -84,13 +84,19 @@ ind = iGetIndicesForEachConfusionMatrixEntry(i, j, numClasses);
 % Percentages
 if nargout < 4, return, end
 per = zeros(numClasses,4);
+
+%    S(i,1) = false negative rate(miss) = false negatives / all target positives
+%    S(i,2) = false positive rate(false alarm) = false positives / all target negatives
+%    S(i,3) = true positive rate(hit) = true positives / all target positives
+%    S(i,4) = true negative rate(correct reject) = true negatives / all target negatives
+
 for i=1:numClasses
   yi = outputs(i,:);
   ti = targets(i,:);
-  per(i,1) = sum((yi ~= 1)&(ti == 1))/sum(yi ~= 1);
-  per(i,2) = sum((yi == 1)&(ti ~= 1))/sum(yi == 1);
-  per(i,3) = sum((yi == 1)&(ti == 1))/sum(yi == 1);
-  per(i,4) = sum((yi ~= 1)&(ti ~= 1))/sum(yi ~= 1);
+  per(i,1) = sum((yi ~= 1)&(ti == 1))/sum(ti == 1);
+  per(i,2) = sum((yi == 1)&(ti ~= 1))/sum(ti ~= 1);
+  per(i,3) = sum((yi == 1)&(ti == 1))/sum(ti == 1);
+  per(i,4) = sum((yi ~= 1)&(ti ~= 1))/sum(ti ~= 1);
 end
 per(isnan(per)) = 0;
 end

@@ -242,7 +242,7 @@ response(:,1) = trial(:,4) == 1;
 response(:,2) = trial(:,4) ~= 1;
 
 % Summarize the response with figure 
-response_evaluation(target, response,{'Color change', 'Color unchange'});
+binResponseEvaluation(target, response,{'Color change', 'Color unchange'});
 
 % save figure
  figureFile = fullfile(sessDir,...
