@@ -62,7 +62,6 @@ animateKey2 = KbName('2@'); % Left hand:2@
 inanimateKey1 = KbName('3#'); % Right hand: 3#
 inanimateKey2 = KbName('4$'); % Right hand: 4$
 
-
 %% Make design for this session
 % Set design dir
 designDir = fullfile(workDir,'stimulus','train','designMatrix');
@@ -91,7 +90,7 @@ runClass = sessClass(:,runID);
 % Collect trial info for this run
 nStim = length(runStim);
 nTrial = nStim;
-trial = zeros(nTrial, 6); % [onset, class, dur, key, RT]
+trial = zeros(nTrial, 6); % [onset, class, dur, key, RT, timing error]
 trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Load stimulus and instruction
@@ -240,13 +239,36 @@ WaitSecs(2);
 ShowCursor;
 Screen('CloseAll');
 
+%% Evaluate the response
+load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
+% trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
+% only keep trial with response
+respTrial = trial(logical(trial(:,4)),:);
+% Make target matrix nTrial x nCond
+target = zeros(length(respTrial),2);
+animate_label = animate_label(respTrial(:,2));
+target(:,1) = animate_label == 1;
+target(:,2) = animate_label == -1;
+
+% Make response matrix nTrial x nCond
+response = zeros(length(respTrial),2);
+response(:,1) = respTrial(:,4) == 1;
+response(:,2) = respTrial(:,4) == -1;
+
+% Summarize the response with figure 
+response_evaluation(target, response,{'Animate', 'Inanimate'});
+
+% Save figure
+figureFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%02d_run%02d.jpg',subID,sessID,runID));
+print(figureFile,'-djpeg');
+
 %% Save data for this run
 clear img imgStart imgEnd
 resultFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID,runID));
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
+
 % Print sucess info
 fprintf('BINtrain subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
-
-

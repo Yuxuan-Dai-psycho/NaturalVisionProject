@@ -31,7 +31,6 @@ for i = 1:length(classID) % class loop
     imageName = [];
 end
 
-
 %% Load optseq of super class 
 optSeqSuperClass = NaN(nClass,nSession,3);% [onset, class, dur]
 for s = 1:nSession % session loop
@@ -77,6 +76,7 @@ BIN.superClassID = superClassID;% superclass class id, 1000x1, int array
 BIN.stimulus = stimulus; % 1000 x 80, cell array
 BIN.paradigmSuperClass = optSeqSuperClass; % 1000(class) x 80(session) x 3 array
 BIN.paradigmClass = optSeqClass; % 1000(class) x 80(session) x 3  array
+BIN.date = datetime; 
 
 % Save BIN to design dir
 save(fullfile(designDir,'BIN.mat'), 'BIN');
