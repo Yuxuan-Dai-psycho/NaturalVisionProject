@@ -7,9 +7,10 @@ sessDir = fullfile('data','fmri','train',...
     sprintf('sub%02d/sess%02d',subID,sessID));
 
 for runID = 1:4
-    fileName = sprintf('sub%02d_sess%02d_run%02d_beh.mat',subID,sessID,runID);
+    fileName =fullfile(sessDir,...
+        sprintf('sub%02d_sess%02d_run%02d_beh.mat',subID,sessID,runID));
     if ~exist(fileName,'file')
-        warning([fullfile(sessDir,fileName),' ', 'Not Exsit']);
+        warning([fileName,' ', 'Not Exsit']);
         continue
     end
     
@@ -28,7 +29,7 @@ for runID = 1:4
     response(:,2) = trial(:,4) == -1; % unseen
     
     % Summarize the response with figure
-    response_evaluation(target,response,{'Seen', 'Unseen'});
+    binResponseEvaluation(target,response,{'Seen', 'Unseen'});
     
     % Save figure
     figureFile = fullfile(sessDir,...

@@ -256,7 +256,7 @@ response(:,1) = respTrial(:,4) == 1;
 response(:,2) = respTrial(:,4) == -1;
 
 % Summarize the response with figure 
-response_evaluation(target, response,{'Animate', 'Inanimate'});
+binResponseEvaluation(target, response,{'Animate', 'Inanimate'});
 
 % Save figure
 figureFile = fullfile(sessDir,...
