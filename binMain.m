@@ -1,8 +1,7 @@
 %%======！！！！请务必不要搞错subID 和 sessID ！！！=====
 clear; 
 close all
-workDir = '/codeDir/in/your/computer';
-cd(workDir)
+workDir = pwd;
 
 %% Set subject and session info
 % You should manually input subject ID and session ID
