@@ -2,8 +2,9 @@ function binMemoryTestEvalution(subID,sessID)
 % function binMemoryTestEvalution(subID,sessID)
 % Evaluate memory performance from after fmri experiment
 
+workDir = pwd;
 % Create session dir
-sessDir = fullfile('data','fmri','train',...
+sessDir = fullfile(workDir, 'data','fmri','train',...
     sprintf('sub%02d/sess%02d',subID,sessID));
 
 for runID = 1:4
@@ -15,7 +16,7 @@ for runID = 1:4
     end
     
     % Load data
-    load(fullfile(sessDir,fileName),'trial'); % [onset, categoryID, cond, key, rt]
+    load(fileName,'trial'); % [onset, categoryID, cond, key, rt]
     nTrial = length(trial);
     
     % Make target matrix nTrial x nCond
