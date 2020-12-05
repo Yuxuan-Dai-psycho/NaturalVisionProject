@@ -208,6 +208,7 @@ for runID = 1:nRun
     % Print sucess info
     fprintf('BINbehavior subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
 end
+
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
