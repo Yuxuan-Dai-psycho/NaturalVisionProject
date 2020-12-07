@@ -51,7 +51,7 @@ numClasses = size(outputs,1);
 if (numClasses == 1)
   targets = [1-targets; targets];
   outputs = [1-outputs-eps*(outputs==0.5); outputs];
-  [c,cm,ind,per] = confusion(targets,outputs);
+  [c,cm,ind,per] = binConfusion(targets,outputs);
   return;
 end
 
@@ -84,11 +84,6 @@ ind = iGetIndicesForEachConfusionMatrixEntry(i, j, numClasses);
 % Percentages
 if nargout < 4, return, end
 per = zeros(numClasses,4);
-
-%    S(i,1) = false negative rate(miss) = false negatives / all target positives
-%    S(i,2) = false positive rate(false alarm) = false positives / all target negatives
-%    S(i,3) = true positive rate(hit) = true positives / all target positives
-%    S(i,4) = true negative rate(correct reject) = true negatives / all target negatives
 
 for i=1:numClasses
   yi = outputs(i,:);
