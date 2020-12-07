@@ -242,8 +242,8 @@ Screen('CloseAll');
 %% Evaluate the response
 load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
 % trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
-% only keep trial with response
-respTrial = trial(logical(trial(:,4)),:);
+% only keep all the trials
+respTrial = trial;
 % Make target matrix nTrial x nCond
 target = zeros(length(respTrial),2);
 animate_label = animate_label(respTrial(:,2));
@@ -274,7 +274,7 @@ if exist(resultFile,'file')
         sprintf('sub%02d_sess%02d_run%02d-*.mat',subID,sessID,runID)));
     
     % The code works only while try time less than ten
-    if empty(oldFile), n = 1;
+    if isempty(oldFile), n = 1;
     else, n = str2double(oldFile(end).name(end-4)) + 1;
     end
     
