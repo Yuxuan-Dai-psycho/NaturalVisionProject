@@ -21,8 +21,8 @@ workDir = pwd;
 trainDir = fullfile(workDir,'data','fmri','train');
 sessDir = fullfile(trainDir,sprintf('sub%02d/sess%02d',subID,sessID));
 
-% The session should be done before
-if ~exist(sessDir,'file')
+% The fMRI session dir should exist
+if ~exist(sessDir,'dir')
     error('fMRI train subID:%d, sessID:%d ----NOT DONE!',subID, sessID);
 end
 
