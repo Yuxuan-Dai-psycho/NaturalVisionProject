@@ -253,8 +253,27 @@ print(figureFile,'-djpeg');
 clear img imgStart imgEnd
 resultFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%2d_run%02d.mat',subID,sessID,runID));
+
+% If there is an old file, backup it
+if exist(resultFile,'file')
+    oldFile = dir(fullfile(sessDir,...
+        sprintf('sub%02d_sess%02d_run%02d-*.mat',subID,sessID,runID)));
+    
+    % The code works only while try time less than ten
+    if empty(oldFile), n = 1;
+    else, n = str2double(oldFile(end).name(end-4)) + 1;
+    end
+    
+    % Backup the file from last test 
+    newOldFile = fullfile(sessDir,...
+        sprintf('sub%02d_sess%02d_run%02d-%d.mat',subID,sessID,runID,n));
+    copyfile(resultFile,newOldFile);
+end
+
+% Save file
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
+
 % Print  info
 fprintf('BINtest sub:%d, sess:%d, run:%d ---- DONE!\n', subID, sessID,runID);
 

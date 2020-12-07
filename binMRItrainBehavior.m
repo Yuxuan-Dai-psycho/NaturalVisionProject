@@ -201,10 +201,12 @@ for runID = 1:nRun
     
     % Save data for this runID
     clear img imgStart imgEnd
-    dataFile = fullfile(sessDir,...
+    resultFile = fullfile(sessDir,...
         sprintf('sub%02d_sess%02d_run%02d_beh.mat',subID,sessID,runID));
-    fprintf('Data were saved to: %s\n',dataFile);
-    save(dataFile);
+    
+    % Save data
+    fprintf('Data were saved to: %s\n',resultFile);
+    save(resultFile);
     % Print sucess info
     fprintf('BINbehavior subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
 end
