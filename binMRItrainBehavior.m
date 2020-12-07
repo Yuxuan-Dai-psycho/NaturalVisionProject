@@ -17,13 +17,15 @@ if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 if ~ismember(sRun, 1:4), error('sRun is a integer within [1:4]!');end
 
 %% Data dir
-% All dir should exist before the behavior test
 workDir = pwd;
 trainDir = fullfile(workDir,'data','fmri','train');
 sessDir = fullfile(trainDir,sprintf('sub%02d/sess%02d',subID,sessID));
+
+% The session should be done before
 if ~exist(sessDir,'file')
     error('fMRI train subID:%d, sessID:%d ----NOT DONE!',subID, sessID);
 end
+
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);

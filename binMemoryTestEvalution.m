@@ -39,10 +39,10 @@ for runID = 1:4
     condName = {'Seen', 'Unseen'};
     set(gca,'Xtick',1:length(cMat), 'XTickLabel',condName,...
         'Ytick',1:length(cMat),'YTickLabel',condName);
-    text(0.75,1,sprintf('%.2f',cPer(1,3)),'FontSize',50,'Color','r');% hit
-    text(0.75,2,sprintf('%.2f',cPer(1,1)),'FontSize',50,'Color','r');% miss
-    text(1.75,1,sprintf('%.2f',cPer(1,2)),'FontSize',50,'Color','r');% false alarm
-    text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
+    text(0.65,1,sprintf('%.2f',cPer(1,3)),'FontSize',25,'Color','r');% hit
+    text(0.65,2,sprintf('%.2f',cPer(1,1)),'FontSize',25,'Color','r');% miss
+    text(1.65,1,sprintf('%.2f',cPer(1,2)),'FontSize',25,'Color','r');% false alarm
+    text(1.65,2,sprintf('%.2f',cPer(1,4)),'FontSize',25,'Color','r');% corect reject
 end
 % Save figure
 figureFile = fullfile(sessDir,sprintf('sub%02d_sess%02d_beh.jpg',subID,sessID));
