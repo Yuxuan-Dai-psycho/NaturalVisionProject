@@ -21,6 +21,9 @@ if ~ismember(sRun, 1:4), error('sRun is a integer within [1:4]!');end
 workDir = pwd;
 trainDir = fullfile(workDir,'data','fmri','train');
 sessDir = fullfile(trainDir,sprintf('sub%02d/sess%02d',subID,sessID));
+if ~exist(sessDir,'file')
+    error('fMRI train subID:%d, sessID:%d ----NOT DONE!',subID, sessID);
+end
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
