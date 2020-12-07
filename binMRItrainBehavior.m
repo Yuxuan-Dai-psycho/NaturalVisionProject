@@ -206,7 +206,7 @@ for runID = sRun:nRun
             sprintf('sub%02d_sess%02d_run%02d_beh-*.mat',subID,sessID,runID)));
         
         % The code works only while try time less than ten
-        if empty(oldFile), n = 1;
+        if isempty(oldFile), n = 1;
         else, n = str2double(oldFile(end).name(end-4)) + 1;
         end
         
