@@ -242,18 +242,16 @@ Screen('CloseAll');
 %% Evaluate the response
 load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
 % trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
-% only keep trial with response
-respTrial = trial(logical(trial(:,4)),:);
 % Make target matrix nTrial x nCond
-target = zeros(length(respTrial),2);
-animate_label = animate_label(respTrial(:,2));
+target = zeros(nTrial,2);
+animate_label = animate_label(trial(:,2));
 target(:,1) = animate_label == 1;
 target(:,2) = animate_label == -1;
 
 % Make response matrix nTrial x nCond
-response = zeros(length(respTrial),2);
-response(:,1) = respTrial(:,4) == 1;
-response(:,2) = respTrial(:,4) == -1;
+response = zeros(nTrial,2);
+response(:,1) = trial(:,4) == 1;
+response(:,2) = trial(:,4) == -1;
 
 % Summarize the response with figure 
 binResponseEvaluation(target, response,{'Animate', 'Inanimate'});
