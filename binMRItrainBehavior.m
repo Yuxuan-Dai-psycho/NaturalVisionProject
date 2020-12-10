@@ -98,9 +98,8 @@ fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi
 
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
-onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
+onDur = 2.5 - 0.5*flipInterval; % on duration for a stimulus
 maskDur = 0.2; % ending duration of each trial
-maxDur = 2; % max duration of a trial
 beginDur = 4; % beigining fixation duration
 endDur = 4; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
@@ -166,29 +165,14 @@ for runID = sRun:nRun
                 end
             end
         end
-        
+        trial(t, 4:5) = [key,rt];
+
         % Show fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
         Screen('DrawingFinished',wptr);
         tFix = Screen('Flip', wptr);
-        
-        if rt % If subject already responds,just show fixation with short time
-            while GetSecs - tFix < maskDur, end
-        else % if subejct have not responded, wait the response until the end of the trial
-            while GetSecs - tStim < maxDur
-                [keyIsDown, tKey, keyCode] = KbCheck();
-                if keyIsDown
-                    if keyCode(escKey),sca; return;
-                    elseif keyCode(seenKey)
-                        key = 1; rt = tKey - tStim; break;
-                    elseif keyCode(notSeenKey)
-                        key = -1; rt = tKey - tStim; break;
-                    end
-                end
-            end
-        end
-        trial(t, 4:5) = [key,rt];
+        while GetSecs - tFix < maskDur, end
     end
     
     % Wait ending fixation
