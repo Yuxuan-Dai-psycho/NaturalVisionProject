@@ -1,5 +1,5 @@
-function objectMRItrainBehaviorPrepare(subID,sessID, nTrial)
-% function trial = objectMRItrainBehaviorPrepare(subID,sessID)
+function objectImageNetMemoryPrep(subID,sessID, nTrial)
+% function trial = objectImageNetMemoryPrep(subID,sessID)
 % Memory test training after BrianImageNet fMRI train experiment
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]

@@ -1,5 +1,5 @@
-function objectMemoryTestEvalution(subID,sessID)
-% function objectMemoryTestEvalution(subID,sessID)
+function objectImageNetMemoryEvaluation(subID,sessID)
+% function objectImageNetMemoryEvaluation(subID,sessID)
 % Evaluate memory performance from after fmri experiment
 workDir = pwd;
 % Create session dir

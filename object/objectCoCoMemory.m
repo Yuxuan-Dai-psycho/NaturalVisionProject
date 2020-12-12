@@ -1,5 +1,5 @@
-function trial = objectMRItestBehavior(subID,sessID,sRun)
-% function trial = objectMRItestBehavior(subID,sessID,sRun)
+function trial = objectCoCoMemory(subID,sessID,sRun)
+% function trial = objectCoCoMemory(subID,sessID,sRun)
 % Memory test after BrianImageNet fMRI train experiment
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]

@@ -1,5 +1,5 @@
-function trial = objectMRItest(subID, sessID, runID)
-% function trial = objectMRItest(subID, sessID, runID)
+function trial = objectCoCoMRI(subID, sessID, runID)
+% function trial = objectCoCoMRI(subID, sessID, runID)
 % fMRI experiment for BrainImageNet test dataset
 % subID, subjet ID, integer[1-20]
 % runID, run ID, integer [1-10]
