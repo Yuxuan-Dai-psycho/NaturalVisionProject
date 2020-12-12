@@ -1,5 +1,5 @@
-function trial = binMRItrain(subID,sessID,runID)
-% function [subject,task] = binMRItrain(subID,sessID,runID)
+function trial = objectImageNetMRI(subID,sessID,runID)
+% function [subject,task] = objectImageNetMRI(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
 % subject do animate vs. inanimate discrimination task
 % subID, subjet ID, integer[1-20]
@@ -242,21 +242,19 @@ Screen('CloseAll');
 %% Evaluate the response
 load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
 % trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
-% only keep all the trials
-respTrial = trial;
 % Make target matrix nTrial x nCond
-target = zeros(length(respTrial),2);
-animate_label = animate_label(respTrial(:,2));
+target = zeros(nTrial,2);
+animate_label = animate_label(trial(:,2));
 target(:,1) = animate_label == 1;
 target(:,2) = animate_label == -1;
 
 % Make response matrix nTrial x nCond
-response = zeros(length(respTrial),2);
-response(:,1) = respTrial(:,4) == 1;
-response(:,2) = respTrial(:,4) == -1;
+response = zeros(nTrial,2);
+response(:,1) = trial(:,4) == 1;
+response(:,2) = trial(:,4) == -1;
 
 % Summarize the response with figure 
-binResponseEvaluation(target, response,{'Animate', 'Inanimate'});
+responseEvaluation(target, response,{'Animate', 'Inanimate'});
 
 % Save figure
 figureFile = fullfile(sessDir,...
@@ -289,4 +287,38 @@ fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
 % Print sucess info
-fprintf('BINtrain subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
+fprintf('BIN ImageNet fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+    subID, sessID,runID)
+
+function responseEvaluation(target,response,condName)
+% responseEvaluation(target,response,condName)
+% target, response,rt,condName
+
+idx = any(response,2);% only keep trial with response
+[cVal,cMat,~,cPer] = binConfusion(target(idx,:)',response(idx,:)');
+figure('Units','normalized','Position',[0 0 0.5 0.5])
+% subplot(1,2,1), 
+imagesc(cMat);
+title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));
+axis square
+set(gca,'Xtick',1:length(cMat), 'XTickLabel',condName,...
+    'Ytick',1:length(cMat),'YTickLabel',condName);
+colorbar
+text(0.75,1,sprintf('%.2f',cPer(1,3)),'FontSize',50,'Color','r');% hit
+text(0.75,2,sprintf('%.2f',cPer(1,1)),'FontSize',50,'Color','r');% miss
+text(1.75,1,sprintf('%.2f',cPer(1,2)),'FontSize',50,'Color','r');% false alarm
+text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
+
+% subplot(1,2,2), bar(cPer);
+% set(gca,'XTickLabel',condName);
+% ylabel('Rate')
+% axis square
+% legend({'Miss','False alarm','Hit','Correct reject'},...
+%    'Orientation','vertical' ,'Location','northeastoutside' )
+% legend boxoff
+
+
+
+
+
+

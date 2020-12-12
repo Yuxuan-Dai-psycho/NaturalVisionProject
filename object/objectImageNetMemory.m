@@ -1,6 +1,6 @@
-function trial = binMRItrainBehavior(subID,sessID,sRun)
-% function trial = binMRItrainBehavior(subID,sessID,sRun)
-% Memory test after BrianImageNet fMRI train experiment
+function trial = objectImageNetMemory(subID,sessID,sRun)
+% function trial = objectImageNetMemory(subID,sessID,sRun)
+% Memory test after ImageNet fMRI experiment
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]
 % sRun, run ID to start, integer [1-4]
@@ -20,8 +20,10 @@ if ~ismember(sRun, 1:4), error('sRun is a integer within [1:4]!');end
 workDir = pwd;
 trainDir = fullfile(workDir,'data','fmri','train');
 sessDir = fullfile(trainDir,sprintf('sub%02d/sess%02d',subID,sessID));
-% make sessDir if not exist
-if ~exist(sessDir, 'dir'), mkdir(sessDir); end
+
+% The fMRI session dir should exist
+if ~exist(sessDir,'dir'), mkdir(sessDir); end
+
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
@@ -96,9 +98,8 @@ fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi
 
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
-onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
+onDur = 2.5 - 0.5*flipInterval; % on duration for a stimulus
 maskDur = 0.2; % ending duration of each trial
-maxDur = 2; % max duration of a trial
 beginDur = 4; % beigining fixation duration
 endDur = 4; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
@@ -164,29 +165,14 @@ for runID = sRun:nRun
                 end
             end
         end
-        
+        trial(t, 4:5) = [key,rt];
+
         % Show fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
         Screen('DrawingFinished',wptr);
         tFix = Screen('Flip', wptr);
-        
-        if rt % If subject already responds,just show fixation with short time
-            while GetSecs - tFix < maskDur, end
-        else % if subejct have not responded, wait the response until the end of the trial
-            while GetSecs - tStim < maxDur
-                [keyIsDown, tKey, keyCode] = KbCheck();
-                if keyIsDown
-                    if keyCode(escKey),sca; return;
-                    elseif keyCode(seenKey)
-                        key = 1; rt = tKey - tStim; break;
-                    elseif keyCode(notSeenKey)
-                        key = -1; rt = tKey - tStim; break;
-                    end
-                end
-            end
-        end
-        trial(t, 4:5) = [key,rt];
+        while GetSecs - tFix < maskDur, end
     end
     
     % Wait ending fixation
@@ -205,12 +191,10 @@ for runID = sRun:nRun
     if exist(resultFile,'file')
         oldFile = dir(fullfile(sessDir,...
             sprintf('sub%02d_sess%02d_run%02d_beh-*.mat',subID,sessID,runID)));
-        
         % The code works only while try time less than ten
-        if empty(oldFile), n = 1;
+        if isempty(oldFile), n = 1;
         else, n = str2double(oldFile(end).name(end-4)) + 1;
         end
-        
         % Backup the file from last test
         newOldFile = fullfile(sessDir,...
             sprintf('sub%02d_sess%02d_run%02d_beh-%d.mat',subID,sessID,runID,n));
@@ -221,7 +205,8 @@ for runID = sRun:nRun
     fprintf('Data were saved to: %s\n',resultFile);
     save(resultFile);
     % Print sucess info
-    fprintf('BINbehavior subID:%d, sessID:%d, runID:%d ---- DONE!',subID, sessID,runID)
+    fprintf('BIN ImageNet Memory:sub%d-sess%d-run%d ---- DONE!\n',...
+        subID,sessID,runID)
 end
 
 % Show cursor and close all
