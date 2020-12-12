@@ -1,5 +1,5 @@
-function trial = binMRItest(subID, sessID, runID)
-% function trial = binMRItest(subID, sessID, runID)
+function trial = objectCoCoMRI(subID, sessID, runID)
+% function trial = objectCoCoMRI(subID, sessID, runID)
 % fMRI experiment for BrainImageNet test dataset
 % subID, subjet ID, integer[1-20]
 % runID, run ID, integer [1-10]
@@ -242,7 +242,7 @@ response(:,1) = trial(:,4) == 1;
 response(:,2) = trial(:,4) ~= 1;
 
 % Summarize the response with figure 
-binResponseEvaluation(target, response,{'Color change', 'Color unchange'});
+responseEvaluation(target, response,{'Color change', 'Color unchange'});
 
 % save figure
  figureFile = fullfile(sessDir,...
@@ -258,12 +258,10 @@ resultFile = fullfile(sessDir,...
 if exist(resultFile,'file')
     oldFile = dir(fullfile(sessDir,...
         sprintf('sub%02d_sess%02d_run%02d-*.mat',subID,sessID,runID)));
-    
     % The code works only while try time less than ten
     if isempty(oldFile), n = 1;
     else, n = str2double(oldFile(end).name(end-4)) + 1;
     end
-    
     % Backup the file from last test 
     newOldFile = fullfile(sessDir,...
         sprintf('sub%02d_sess%02d_run%02d-%d.mat',subID,sessID,runID,n));
@@ -274,14 +272,31 @@ end
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
-% Print  info
-fprintf('BINtest sub:%d, sess:%d, run:%d ---- DONE!\n', subID, sessID,runID);
+% Print info
+fprintf('BIN CoCo fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+    subID, sessID,runID)
 
 
 
 
+function responseEvaluation(target,response,condName)
+% responseEvaluation(target,response,condName)
+% target, response,rt,condName
 
-
+idx = any(response,2);% only keep trial with response
+[cVal,cMat,~,cPer] = binConfusion(target(idx,:)',response(idx,:)');
+figure('Units','normalized','Position',[0 0 0.5 0.5])
+% subplot(1,2,1), 
+imagesc(cMat);
+title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));
+axis square
+set(gca,'Xtick',1:length(cMat), 'XTickLabel',condName,...
+    'Ytick',1:length(cMat),'YTickLabel',condName);
+colorbar
+text(0.75,1,sprintf('%.2f',cPer(1,3)),'FontSize',50,'Color','r');% hit
+text(0.75,2,sprintf('%.2f',cPer(1,1)),'FontSize',50,'Color','r');% miss
+text(1.75,1,sprintf('%.2f',cPer(1,2)),'FontSize',50,'Color','r');% false alarm
+text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
 
 
 

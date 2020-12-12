@@ -1,6 +1,6 @@
-function binMemoryTestEvalution(subID,sessID)
-% function binMemoryTestEvalution(subID,sessID)
-% Evaluate memory performance from after fmri experiment
+function objectImageNetMemoryEvaluation(subID,sessID)
+% function objectImageNetMemoryEvaluation(subID,sessID)
+% Evaluate memory performance from after ImageNet fmri experiment
 workDir = pwd;
 % Create session dir
 sessDir = fullfile(workDir, 'data','fmri','train',...
@@ -31,7 +31,7 @@ for runID = 1:4
     
     % Summarize the response with figure
     idx = any(response,2);% only keep trial with response
-    [cVal,cMat,~,cPer] = binConfusion(target(idx,:)',response(idx,:)');
+    [cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
     subplot(1,4,runID),
     imagesc(cMat);
     title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));

@@ -1,5 +1,5 @@
-function trial = binMRItrain(subID,sessID,runID)
-% function [subject,task] = binMRItrain(subID,sessID,runID)
+function trial = objectImageNetMRI(subID,sessID,runID)
+% function [subject,task] = objectImageNetMRI(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
 % subject do animate vs. inanimate discrimination task
 % subID, subjet ID, integer[1-20]
@@ -254,7 +254,7 @@ response(:,1) = trial(:,4) == 1;
 response(:,2) = trial(:,4) == -1;
 
 % Summarize the response with figure 
-binResponseEvaluation(target, response,{'Animate', 'Inanimate'});
+responseEvaluation(target, response,{'Animate', 'Inanimate'});
 
 % Save figure
 figureFile = fullfile(sessDir,...
@@ -287,4 +287,38 @@ fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
 % Print sucess info
-fprintf('BINtrain subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
+fprintf('BIN ImageNet fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+    subID, sessID,runID)
+
+function responseEvaluation(target,response,condName)
+% responseEvaluation(target,response,condName)
+% target, response,rt,condName
+
+idx = any(response,2);% only keep trial with response
+[cVal,cMat,~,cPer] = binConfusion(target(idx,:)',response(idx,:)');
+figure('Units','normalized','Position',[0 0 0.5 0.5])
+% subplot(1,2,1), 
+imagesc(cMat);
+title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));
+axis square
+set(gca,'Xtick',1:length(cMat), 'XTickLabel',condName,...
+    'Ytick',1:length(cMat),'YTickLabel',condName);
+colorbar
+text(0.75,1,sprintf('%.2f',cPer(1,3)),'FontSize',50,'Color','r');% hit
+text(0.75,2,sprintf('%.2f',cPer(1,1)),'FontSize',50,'Color','r');% miss
+text(1.75,1,sprintf('%.2f',cPer(1,2)),'FontSize',50,'Color','r');% false alarm
+text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
+
+% subplot(1,2,2), bar(cPer);
+% set(gca,'XTickLabel',condName);
+% ylabel('Rate')
+% axis square
+% legend({'Miss','False alarm','Hit','Correct reject'},...
+%    'Orientation','vertical' ,'Location','northeastoutside' )
+% legend boxoff
+
+
+
+
+
+

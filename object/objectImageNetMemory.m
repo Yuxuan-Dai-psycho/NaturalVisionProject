@@ -1,6 +1,6 @@
-function trial = binMRItrainBehavior(subID,sessID,sRun)
-% function trial = binMRItrainBehavior(subID,sessID,sRun)
-% Memory test after BrianImageNet fMRI train experiment
+function trial = objectImageNetMemory(subID,sessID,sRun)
+% function trial = objectImageNetMemory(subID,sessID,sRun)
+% Memory test after ImageNet fMRI experiment
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]
 % sRun, run ID to start, integer [1-4]
@@ -191,12 +191,10 @@ for runID = sRun:nRun
     if exist(resultFile,'file')
         oldFile = dir(fullfile(sessDir,...
             sprintf('sub%02d_sess%02d_run%02d_beh-*.mat',subID,sessID,runID)));
-        
         % The code works only while try time less than ten
         if isempty(oldFile), n = 1;
         else, n = str2double(oldFile(end).name(end-4)) + 1;
         end
-        
         % Backup the file from last test
         newOldFile = fullfile(sessDir,...
             sprintf('sub%02d_sess%02d_run%02d_beh-%d.mat',subID,sessID,runID,n));
@@ -207,7 +205,8 @@ for runID = sRun:nRun
     fprintf('Data were saved to: %s\n',resultFile);
     save(resultFile);
     % Print sucess info
-    fprintf('BINbehavior subID:%d, sessID:%d, runID:%d ---- DONE!',subID, sessID,runID)
+    fprintf('BIN ImageNet Memory:sub%d-sess%d-run%d ---- DONE!\n',...
+        subID,sessID,runID)
 end
 
 % Show cursor and close all

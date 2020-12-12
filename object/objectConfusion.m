@@ -1,4 +1,4 @@
-function [c,cm,ind,per] = binConfusion(targets,outputs)
+function [c,cm,ind,per] = objectConfusion(targets,outputs)
 %CONFUSION Classification confusion matrix.
 %
 %  [C,CM,IND,PER] = <a href="matlab:doc confusion">confusion</a>(T,Y) takes an SxQ target and output matrices
@@ -51,7 +51,7 @@ numClasses = size(outputs,1);
 if (numClasses == 1)
   targets = [1-targets; targets];
   outputs = [1-outputs-eps*(outputs==0.5); outputs];
-  [c,cm,ind,per] = binConfusion(targets,outputs);
+  [c,cm,ind,per] = objectConfusion(targets,outputs);
   return;
 end
 
