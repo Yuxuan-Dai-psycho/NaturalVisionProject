@@ -1,5 +1,5 @@
-function binResponseEvaluation(target,response,condName)
-% binResponseEvaluation(target,response,condName)
+function objectResponseEvaluation(target,response,condName)
+% objectResponseEvaluation(target,response,condName)
 % target, response,rt,condName
 
 idx = any(response,2);% only keep trial with response

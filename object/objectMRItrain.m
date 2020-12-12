@@ -1,5 +1,5 @@
-function trial = binMRItrain(subID,sessID,runID)
-% function [subject,task] = binMRItrain(subID,sessID,runID)
+function trial = objectMRItrain(subID,sessID,runID)
+% function [subject,task] = objectMRItrain(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
 % subject do animate vs. inanimate discrimination task
 % subID, subjet ID, integer[1-20]
