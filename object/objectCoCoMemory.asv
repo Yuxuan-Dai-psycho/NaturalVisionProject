@@ -73,9 +73,9 @@ cond = ones(nTrial,1); % total trials
 cond(1:length(ctrImgName(3:end)),1) = -1;
 imgID = 1:nStim;
 
-% [onset,imgID,cond,key,rt,timingError].
+% [onset,cond, imgID, key, rt, timingError].
 trial = zeros(nTrial, 6);
-trial(:,2:3) = [imgID,cond]; % [imgID,condition]
+trial(:,2:3) = [cond',imgID]; % [condition, imgID]
 % Randomize stimulus
 idx = randperm(nStim);
 trial = trial(idx,:);
@@ -89,6 +89,7 @@ beginDur = 4; % beigining fixation duration
 endDur = 4; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
+nTrial = nStim/nRun;
 
 
 % Show instruction and wait ready signal from subject
@@ -109,11 +110,12 @@ Screen('Flip',wptr);
 WaitSecs(beginDur);
 
 
-% Show stimulus for each trial
+
+% Sho stimulus for each trial
 tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
-    stimTexture = Screen('MakeTexture', wptr, img{trial(t,2)});
+    stimTexture = Screen('MakeTexture', wptr, img{t});
     Screen('PreloadTextures',wptr,stimTexture);
     Screen('DrawTexture', wptr, stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
@@ -179,7 +181,7 @@ end
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 % Print sucess info
-fprintf('BIN CoCo behavior subID:%d, sessID:%d, runID:%d ---- DONE!',subID, sessID,runID)
+fprintf('BINbehavior subID:%d, sessID:%d, runID:%d ---- DONE!',subID, sessID,runID)
 
 
 % Show cursor and close all
