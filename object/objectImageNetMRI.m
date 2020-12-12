@@ -287,8 +287,8 @@ fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
 % Print sucess info
-fprintf('BINtrain subID:%d, sessID:%d, runID:%d ---- DONE!', subID, sessID,runID)
-
+fprintf('BIN ImageNet fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+    subID, sessID,runID)
 
 function responseEvaluation(target,response,condName)
 % responseEvaluation(target,response,condName)

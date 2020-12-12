@@ -94,9 +94,10 @@ WaitSecs(endDur);
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
-% Print  info
-fprintf('BIN rfMRI sub:%d, sess:%d, run:%d ---- DONE!\n', subID, sessID,runID);
 
+% Print  info
+fprintf('BIN Resting fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+    subID, sessID,runID)
 
 
 

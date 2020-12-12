@@ -174,8 +174,8 @@ end
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 % Print sucess info
-fprintf('BIN CoCo memory subID:%d, sessID:%d, runID:%d ---- DONE!',subID, sessID,runID)
-
+fprintf('BIN CoCo Memory:sub%d-sess%d-run%d ---- DONE!\n',...
+    subID, sessID,runID)
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');

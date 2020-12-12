@@ -25,6 +25,14 @@ close all;sca;
 objectCocoMR(subID,sessID,1);
 
 
+%% Run BIN Resting fMRI exp 
+% You should mannual change runID for each run
+close all;sca;
+objectRestingMRI(subID,sessID);
+
+
+
+
 %% Run BIN CoCo memroy exp 
 % You should mannual change runID for each run
 close all;sca;
