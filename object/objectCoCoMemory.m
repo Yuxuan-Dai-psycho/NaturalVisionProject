@@ -20,13 +20,11 @@ if ~ismember(sRun, 1:4), error('sRun is a integer within [1:4]!');end
 workDir = pwd;
 trainDir = fullfile(workDir,'data','fmri','test');
 sessDir = fullfile(trainDir,sprintf('sub%02d/sess%02d',subID,sessID));
-% The fMRI session dir should exist
 if ~exist(sessDir,'dir'), mkdir(sessDir); end
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
-% Screen('Preference','VisualDebugLevel',4);
-% Screen('Preference','SuppressAllWarnings',1);
+Screen('Preference','VisualDebugLevel',4);
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
@@ -69,9 +67,9 @@ imgEnd = imread(fullfile(workDir, 'instruction', 'testEnd.JPG'));
 
 %% Make design
 nTrial = nStim;
+imgID = 1:nStim;
 cond = ones(nTrial,1); % total trials
 cond(1:length(ctrImgName(3:end)),1) = -1;
-imgID = 1:nStim;
 
 % [onset,imgID,cond,key,rt,timingError].
 trial = zeros(nTrial, 6);
@@ -107,7 +105,6 @@ Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
 Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
-
 
 % Show stimulus for each trial
 tStart = GetSecs;
@@ -163,12 +160,10 @@ resultFile = fullfile(sessDir,...
 if exist(resultFile,'file')
     oldFile = dir(fullfile(sessDir,...
         sprintf('sub%02d_sess%02d_run%02d_beh-*.mat',subID,sessID,runID)));
-    
     % The code works only while try time less than ten
     if isempty(oldFile), n = 1;
     else, n = str2double(oldFile(end).name(end-4)) + 1;
     end
-    
     % Backup the file from last test
     newOldFile = fullfile(sessDir,...
         sprintf('sub%02d_sess%02d_run%02d_beh-%d.mat',subID,sessID,runID,n));
@@ -179,12 +174,12 @@ end
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 % Print sucess info
-fprintf('BIN CoCo behavior subID:%d, sessID:%d, runID:%d ---- DONE!',subID, sessID,runID)
-
+fprintf('BIN CoCo memory subID:%d, sessID:%d, runID:%d ---- DONE!',subID, sessID,runID)
 
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
+
 
 
 

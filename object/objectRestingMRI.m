@@ -12,7 +12,7 @@ if nargin < 3, runID = 1; end
 if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
 % Check session id
 if ~ismember(sessID, 1:5), error('sessID is a integer within [1:5]!');end
-% Check run id, max 2 run in a session
+% Check run id, max 2 runs in a session
 if ~ismember(runID, 1:2), error('runID is a integer within [1:2]!'); end
 
 %% Data dir
@@ -21,8 +21,7 @@ workDir = pwd;
 
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
-% Screen('Preference','VisualDebugLevel',4);
-% Screen('Preference','SuppressAllWarnings',1);
+Screen('Preference','VisualDebugLevel',4);
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
@@ -36,19 +35,16 @@ startKey = KbName('s');
 escKey = KbName('ESCAPE');
 
 %% Load stimulus and instruction
-fixOuterAngle = 0.2;% 0.3
-fixInnerAngle = 0.1;% 0.2
-whiteFixation = [255 255 255]; % color of fixation circular point
-redFixation = [255 0 0]; % color of fixation circular point
-
+fixOuterAngle = 0.3;
+fixInnerAngle = 0.2;
 % Visual angle to pixel
 pixelPerMilimeterHor = 1024/390;
 fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
 fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 
 % Load instruction image
-imgStart = imread(fullfile(workDir, 'instruction', 'testStart.JPG'));
-imgEnd = imread(fullfile(workDir, 'instruction', 'testEnd.JPG'));
+imgStart = imread(fullfile(workDir, 'instruction', 'restStart.JPG'));
+imgEnd = imread(fullfile(workDir, 'instruction', 'restEnd.JPG'));
 
 %% Show instruction
 startTexture = Screen('MakeTexture', wptr, imgStart);
@@ -62,6 +58,7 @@ while true
     [keyIsDown,~,keyCode] = KbCheck();
     if keyIsDown && (keyCode(cueKey1) || keyCode(cueKey2)), break; end
 end
+redFixation = [255 0 0]; % read fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, redFixation, [], 2);
 Screen('Flip', wptr);
 
@@ -76,6 +73,7 @@ end
 
 %% Run experiment
 % Show begining fixation
+whiteFixation = [255 255 255]; % white fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
 tStart = Screen('Flip',wptr);
 
