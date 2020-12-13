@@ -10,7 +10,7 @@ if nargin < 3, nTrial = 20; end
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
+if ~ismember(subID, [1:20 10086]), error('subID is a integer within [1:20]!'); end
 % Check session id
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check session id
@@ -69,7 +69,7 @@ fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi
 
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
-onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
+onDur = 2.5 - 0.5*flipInterval; % on duration for a stimulus
 maskDur = 0.2; % ending duration of each trial
 maxDur = 2; % max duration of a trial
 beginDur = 4; % beigining fixation duration
@@ -114,12 +114,19 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
     Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
-    Screen('Close',stimTexture);
+    
 
     % Record response while stimulus is on
     rt = 0;
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStim < onDur
+        if GetSecs - tStim > 1.5
+            Screen('DrawTexture', wptr, stimTexture);
+            Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+            Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, [255 0 0], [], 2);
+            Screen('DrawingFinished',wptr);
+            Screen('Flip',wptr);
+        end
         [keyIsDown, tKey, keyCode] = KbCheck();
         if keyIsDown
             if keyCode(escKey),sca; return;
@@ -130,7 +137,7 @@ for t = 1:nTrial
             end
         end
     end
-
+    Screen('Close',stimTexture);
     % Show fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);

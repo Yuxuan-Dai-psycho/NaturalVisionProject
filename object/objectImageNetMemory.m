@@ -10,7 +10,7 @@ if nargin < 3, sRun = 1; end
 
 %% Check subject information+
 % Check subject id
-if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
+if ~ismember(subID, [1:20 10086]), error('subID is a integer within [1:20]!'); end
 % Check session id
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check start run
@@ -24,7 +24,13 @@ sessDir = fullfile(trainDir,sprintf('sub%02d/sess%02d',subID,sessID));
 % The fMRI session dir should exist
 if ~exist(sessDir,'dir'), mkdir(sessDir); end
 
-
+%% for test checking
+if subID == 10086
+    subID =1;
+    Test = 1;
+else
+    Test = 0;
+end
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
 % Screen('Preference','VisualDebugLevel',4);
@@ -148,7 +154,7 @@ for runID = sRun:nRun
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
         Screen('DrawingFinished',wptr);
         tStim = Screen('Flip',wptr);
-        Screen('Close',stimTexture);
+        
         trial(t,1) = tStim - tStart;
         
         % Record response while stimulus is on
@@ -156,6 +162,13 @@ for runID = sRun:nRun
         while KbCheck(), end % empty the key buffer
         while GetSecs - tStim < onDur
             [keyIsDown, tKey, keyCode] = KbCheck();
+            if GetSecs - tStim > 1.5
+                Screen('DrawTexture', wptr, stimTexture);
+                Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+                Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, [255 0 0], [], 2);
+                Screen('DrawingFinished',wptr);
+                Screen('Flip',wptr);
+            end
             if keyIsDown
                 if keyCode(escKey),sca; return;
                 elseif keyCode(seenKey)
@@ -166,7 +179,8 @@ for runID = sRun:nRun
             end
         end
         trial(t, 4:5) = [key,rt];
-
+        
+        Screen('Close',stimTexture);
         % Show fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
@@ -208,7 +222,9 @@ for runID = sRun:nRun
     fprintf('BIN ImageNet Memory:sub%d-sess%d-run%d ---- DONE!\n',...
         subID,sessID,runID)
 end
-
+if Test ==1
+    fprintf('Testing BIN ImageNet Memory')
+end
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');

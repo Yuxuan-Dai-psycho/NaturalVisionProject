@@ -5,7 +5,7 @@ workDir = pwd;
 
 %% Set subject and session info
 % You should manually input subject ID and session ID
-subName = 'shenhuadong';subID = 4; sessID = 1; 
+subName = 'Test';subID = 10086; sessID = 1; 
 
 %% Run BIN ImageNet fMRI exp: 
 % You should mannual change runID for each run
@@ -22,7 +22,7 @@ objectImageNetMemory(subID,sessID);
 %% Run BIN CoCo fMRI exp 
 % You should mannual change runID for each run
 close all;sca;
-objectCocoMR(subID,sessID,1);
+objectCoCoMRI(subID,sessID,1);
 
 
 %% Run BIN Resting fMRI exp 

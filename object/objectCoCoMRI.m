@@ -7,7 +7,7 @@ function trial = objectCoCoMRI(subID, sessID, runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
+if ~ismember(subID, [1:20, 10086]), error('subID is a integer within [1:20]!'); end
 % Check session id
 if ~ismember(sessID, 1:1), error('sessID is a integer within [1:1]!');end
 % Check run id
@@ -37,9 +37,18 @@ if ~exist(subDir,'dir'), mkdir(subDir),end
 % Make session dir
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
-
+%% for Test checking
+if subID ==10086
+    subID = 1; 
+    Test = 1;
+else
+    Test = 0;
+end
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
+if runID > 1
+  Screen('Preference','VisualDebugLevel',3);  
+end
 % Screen('Preference','VisualDebugLevel',4);
 % Screen('Preference','SuppressAllWarnings',1);
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
@@ -272,10 +281,13 @@ end
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
+
 % Print info
 fprintf('BIN CoCo fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
-
+if Test == 1
+    fprintf('Testing BIN CoCo fMRI ---- DONE!\n')
+end
 
 
 
@@ -284,7 +296,7 @@ function responseEvaluation(target,response,condName)
 % target, response,rt,condName
 
 idx = any(response,2);% only keep trial with response
-[cVal,cMat,~,cPer] = binConfusion(target(idx,:)',response(idx,:)');
+[cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
 figure('Units','normalized','Position',[0 0 0.5 0.5])
 % subplot(1,2,1), 
 imagesc(cMat);
@@ -297,6 +309,7 @@ text(0.75,1,sprintf('%.2f',cPer(1,3)),'FontSize',50,'Color','r');% hit
 text(0.75,2,sprintf('%.2f',cPer(1,1)),'FontSize',50,'Color','r');% miss
 text(1.75,1,sprintf('%.2f',cPer(1,2)),'FontSize',50,'Color','r');% false alarm
 text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
+
 
 
 

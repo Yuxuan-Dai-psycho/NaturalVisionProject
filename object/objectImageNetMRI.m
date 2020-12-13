@@ -9,7 +9,7 @@ function trial = objectImageNetMRI(subID,sessID,runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
+if ~ismember(subID, [1:20,10086]), error('subID is a integer within [1:20]!'); end
 % Check session id
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check run id
@@ -39,9 +39,18 @@ if ~exist(subDir,'dir'), mkdir(subDir),end
 % Make session dir
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
-
+%% for Test checking
+if subID ==10086
+   subID = 1; 
+   Test = 1;
+else
+    Test = 0;
+end
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
+if runID > 1
+    Screen('Preference','VisualDebugLevel',3);
+end
 % Screen('Preference','VisualDebugLevel',4);
 % Screen('Preference','SuppressAllWarnings',1);
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
@@ -147,7 +156,6 @@ while true
     elseif keyIsDown && keyCode(escKey), sca; return;
     end
 end
-
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
@@ -289,13 +297,15 @@ save(resultFile);
 % Print sucess info
 fprintf('BIN ImageNet fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
-
+if Test == 1
+    fprintf('Testing BIN ImageNet fMRI ---- DONE!\n')
+end
 function responseEvaluation(target,response,condName)
 % responseEvaluation(target,response,condName)
 % target, response,rt,condName
 
 idx = any(response,2);% only keep trial with response
-[cVal,cMat,~,cPer] = binConfusion(target(idx,:)',response(idx,:)');
+[cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
 figure('Units','normalized','Position',[0 0 0.5 0.5])
 % subplot(1,2,1), 
 imagesc(cMat);
