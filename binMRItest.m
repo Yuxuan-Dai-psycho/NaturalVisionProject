@@ -277,18 +277,3 @@ save(resultFile);
 % Print  info
 fprintf('BINtest sub:%d, sess:%d, run:%d ---- DONE!\n', subID, sessID,runID);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

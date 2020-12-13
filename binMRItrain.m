@@ -242,6 +242,8 @@ Screen('CloseAll');
 %% Evaluate the response
 load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
 % trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
+% only keep all the trials
+respTrial = trial;
 % Make target matrix nTrial x nCond
 target = zeros(nTrial,2);
 animate_label = animate_label(trial(:,2));
