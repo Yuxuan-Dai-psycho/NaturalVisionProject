@@ -242,11 +242,6 @@ Screen('CloseAll');
 %% Evaluate the response
 load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
 % trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
-<<<<<<< HEAD:binMRItrain.m
-% only keep all the trials
-respTrial = trial;
-=======
->>>>>>> 35588df79c4557a5e88bd49f0b6fee45066cc764:object/objectImageNetMRI.m
 % Make target matrix nTrial x nCond
 target = zeros(nTrial,2);
 animate_label = animate_label(trial(:,2));
