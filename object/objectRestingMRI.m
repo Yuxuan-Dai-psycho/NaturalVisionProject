@@ -9,7 +9,7 @@ if nargin < 3, runID = 1; end
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
+if ~ismember(subID, [1:20 10086]), error('subID is a integer within [1:20]!'); end
 % Check session id
 if ~ismember(sessID, 1:5), error('sessID is a integer within [1:5]!');end
 % Check run id, max 2 runs in a session
@@ -33,7 +33,8 @@ HideCursor;
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
-
+cueKey1 = KbName('1!');
+cueKey2 = KbName('2@');
 %% Load stimulus and instruction
 fixOuterAngle = 0.3;
 fixInnerAngle = 0.2;

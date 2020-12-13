@@ -10,7 +10,7 @@ if nargin < 3, sRun = 1; end
 
 %% Check subject information+
 % Check subject id
-if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
+if ~ismember(subID, [1:20 10086]), error('subID is a integer within [1:20]!'); end
 % Check session id
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check start run
@@ -21,7 +21,12 @@ workDir = pwd;
 trainDir = fullfile(workDir,'data','fmri','test');
 sessDir = fullfile(trainDir,sprintf('sub%02d/sess%02d',subID,sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir); end
-
+%% for test checking
+if subID == 10086
+    Test = 1;
+else
+    Test = 0;
+end
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
 Screen('Preference','VisualDebugLevel',4);
@@ -176,6 +181,9 @@ save(resultFile);
 % Print sucess info
 fprintf('BIN CoCo Memory:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
+if Test == 1
+    fprintf('Testing BIN CoCo Memory')
+end
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
