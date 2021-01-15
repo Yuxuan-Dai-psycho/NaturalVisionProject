@@ -7,7 +7,7 @@ function trial = objectCoCoMemory(subID,sessID,sRun)
 % workdir(or codeDir) -> sitmulus/instruciton/data
 
 if nargin < 3, sRun = 1; end
-
+runID = 1;
 %% Check subject information+
 % Check subject id
 if ~ismember(subID, [1:20 10086]), error('subID is a integer within [1:20]!'); end
@@ -62,7 +62,11 @@ imgName = [ctrImgName(3:end),expImgName(3:end)];
 nStim = length(imgName);
 img = cell(nStim,1);
 for t = 1:nStim
-    img{t}  = imresize(imread(fullfile(stimDir, imgName{t})),[imgPixelHor imgPixelVer]);
+    if t <= 120
+        img{t} = imresize(imread(fullfile(stimDir, 'ctrImages', imgName{t})),[imgPixelHor imgPixelVer]);
+    else 
+        img{t} = imresize(imread(fullfile(stimDir, 'expImages', imgName{t})),[imgPixelHor imgPixelVer]);
+    end
 end
 
 % Load instruction image
@@ -78,7 +82,7 @@ cond(1:length(ctrImgName(3:end)),1) = -1;
 
 % [onset,imgID,cond,key,rt,timingError].
 trial = zeros(nTrial, 6);
-trial(:,2:3) = [imgID,cond]; % [imgID,condition]
+trial(:,2:3) = [imgID',cond]; % [imgID,condition]
 % Randomize stimulus
 idx = randperm(nStim);
 trial = trial(idx,:);
@@ -122,13 +126,20 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
     Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
-    Screen('Close',stimTexture);
+    
     trial(t,1) = tStim - tStart;
     
     % Record response while stimulus is on
     key = 0; rt = 0;
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStim < onDur
+        if GetSecs - tStim > 1.5
+            Screen('DrawTexture', wptr, stimTexture);
+            Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+            Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, [255 0 0], [], 2);
+            Screen('DrawingFinished',wptr);
+            Screen('Flip',wptr);
+        end
         [keyIsDown, tKey, keyCode] = KbCheck();
         if keyIsDown
             if keyCode(escKey),sca; return;
@@ -140,7 +151,7 @@ for t = 1:nTrial
         end
     end
     trial(t, 4:5) = [key,rt];
-    
+    Screen('Close',stimTexture);
     % Show fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
