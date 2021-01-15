@@ -47,7 +47,11 @@ else
     Test = 0;
 end
 %% Screen setting
-Screen('Preference', 'SkipSyncTests', 1);
+% Screen('Preference', 'SkipSyncTests', 1);
+Screen('Preference', 'SkipSyncTests', 2);
+Screen('Preference', 'VisualDebugLevel', 4);
+Screen('Preference', 'SuppressAllWarnings',1);
+
 if runID > 1
     Screen('Preference','VisualDebugLevel',3);
 end
