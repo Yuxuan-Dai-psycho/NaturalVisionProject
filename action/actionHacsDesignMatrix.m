@@ -66,7 +66,7 @@ end
 % reshape stimulus to 800x60 array
 % reshape optSeqSuperClass&optSeqClass to 800x60x3 array
 stimulus = reshape(stimulus,nStimPerSession,nSession); 
-optSeqClass = reshape(optSeqSuperClass,nStimPerSession,nSession,3); 
+optSeqClass = reshape(optSeqClass,nStimPerSession,nSession,3); 
 optSeqSuperClass = reshape(optSeqSuperClass,...
         nStimPerSession,nSession,3); 
 
