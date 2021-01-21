@@ -65,10 +65,10 @@ end
 %% Reshape stimulus and design sequence as required
 % reshape stimulus to 800x60 array
 % reshape optSeqSuperClass&optSeqClass to 800x60x3 array
-stimlus = reshape(stimulus,stimPerSession,nSession); 
-optSeqClass = reshape(optSeqSuperClass,stimPerSession,nSession,3); 
+stimulus = reshape(stimulus,nStimPerSession,nSession); 
+optSeqClass = reshape(optSeqClass,nStimPerSession,nSession,3); 
 optSeqSuperClass = reshape(optSeqSuperClass,...
-        stimPerSession,nSession,3); 
+        nStimPerSession,nSession,3); 
 
 %% Replace optSeq timing with Kay design
 nRun = 8; runDur = 476; trialDur = 4; % in seconds
@@ -82,7 +82,7 @@ end
  
 %% Pack and save action strcture
 action.desp = 'actionHacs session-level paradigm';
-action.classID = classID; % HACS class id, 200x1, int array
+action.className = className; % HACS class name, 200x1, cell array
 action.superClassName = superClassName;% HACS superclass id, 200x1, cell array
 action.superClassID = superClassID;% HACS superclass class id, 200x1, int array
 action.stimulus = stimulus; % 800 x 60, cell array
