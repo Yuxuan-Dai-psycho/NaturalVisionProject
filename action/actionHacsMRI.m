@@ -25,7 +25,7 @@ if (sessID > 1) && (~ismember(subID, continuedSubID))
 
 %% Data dir
 % Make work dir
-workDir = 'D:\fMRI\action';
+workDir = pwd;
 
 % Make data dir
 dataDir = fullfile(workDir,'data');
@@ -61,6 +61,22 @@ screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
 [xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
 HideCursor;
+
+% Visule angle for stimlus and fixation
+videoAngle = 16;
+fixAngle = 0.5;
+
+% Visual angle to pixel
+pixelPerMilimeterHor = 1024/390;
+pixelPerMilimeterVer = 768/295;
+videoPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(videoAngle/180*pi/2)));
+videoPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(videoAngle/180*pi/2)));
+fixSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixAngle/180*pi/2)));
+
+% define size rect of the video frame
+dsRect = [xCenter-videoPixelHor/2, yCenter-videoPixelHor/2,...
+    xCenter+videoPixelVer/2, yCenter+videoPixelVer/2];
+
 
 %% Response keys setting
 % PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
@@ -114,17 +130,6 @@ trial = zeros(nTrial, 4); % [onset, class, dur, timing error]
 trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Load stimulus and instruction
-% Visule angle for stimlus and fixation
-imgAngle = 16;
-fixAngle = 0.5;
-
-% Visual angle to pixel
-pixelPerMilimeterHor = 1024/390;
-pixelPerMilimeterVer = 768/295;
-imgPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2)));
-imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
-fixSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixAngle/180*pi/2)));
-
 % Load stimuli
 stimDir = fullfile(workDir,'stimulus', 'video');
 videoPath = cell(nStim,1);
@@ -133,8 +138,8 @@ for t = 1:nStim
 end
 
 % Load  instruction
-imgStart = imread(fullfile(workDir, 'instruction', 'trainStart.JPG'));
-imgEnd = imread(fullfile(workDir, 'instruction', 'trainEnd.JPG'));
+imgStart = imread(fullfile(workDir, 'instruction', 'expStart.JPG'));
+imgEnd = imread(fullfile(workDir, 'instruction', 'expEnd.JPG'));
 
 %% Show instruction
 startTexture = Screen('MakeTexture', wptr, imgStart);
@@ -171,11 +176,12 @@ runDur = 480; % duration for a run
 beginDur = 16; % beigining fixation duration
 endDur = 16; % ending fixation duration
 fixColor = [255 255 255]; % color of fixation 
+fixThickness = 2; % thickness of fixation 
 tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
 
 % Show begining fixation
 Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
-    xCenter+fixSize/2, yCenter+fixSize/2], 3);
+    xCenter+fixSize/2, yCenter+fixSize/2], fixThickness);
 Screen('DrawingFinished',wptr);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
@@ -186,35 +192,37 @@ for t = 1:nTrial
     % Show stimulus with fixation
     mvPtr = Screen('OpenMovie', wptr, videoPath{t});
     Screen('PlayMovie', mvPtr, 1); % 1 means the normal speed    
-%     Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
-%         xCenter+fixSize/2, yCenter+fixSize/2], 3);
-%     Screen('DrawingFinished',wptr);
-%     tStim = Screen('Flip',wptr);
-%     trial(t, 4) = tStim - tStart; % timing error
     tStim = GetSecs;
+    trial(t, 4) = tStim - tStart; % timing error
+    
     % If press escape, then break the experiment
     while KbCheck(), end % empty the key buffer
-    while GetSecs - tStim < onDur
+    while 1 %GetSecs - tStim < onDur
         tex = Screen('GetMovieImage', wptr, mvPtr);
         % wait response
         [keyIsDown, ~, keyCode] = KbCheck();
         if keyIsDown
             if keyCode(escKey),sca; return; end
         end
-%         if tex <= 0
-%             break;
-%         end
-        Screen('DrawTexture', wptr, tex, [], rect);
+        % End of movie. break out of loop.
+        if tex <= 0
+            break;
+        end
+        % draw frame on the screen
+        Screen('DrawTexture', wptr, tex, [], dsRect);
+        Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
+            xCenter+fixSize/2, yCenter+fixSize/2], fixThickness);
+        Screen('DrawingFinished',wptr);
         Screen('Flip', wptr);
         Screen('Close', tex)
     end
-    % close movie
+    % Close movie
     Screen('PlayMovie', mvPtr, 0); % 0 means stop playing
     Screen('CloseMovie', mvPtr); % close movie file
         
     % Show fixation
     Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
-        xCenter+fixSize/2, yCenter+fixSize/2], 3);
+        xCenter+fixSize/2, yCenter+fixSize/2], fixThickness);
     Screen('DrawingFinished',wptr);
     Screen('Flip', wptr);
     
@@ -243,28 +251,6 @@ WaitSecs(2);
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
-
-%% Evaluate the response
-% load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
-% % trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
-% % Make target matrix nTrial x nCond
-% target = zeros(nTrial,2);
-% animate_label = animate_label(trial(:,2));
-% target(:,1) = animate_label == 1;
-% target(:,2) = animate_label == -1;
-% 
-% % Make response matrix nTrial x nCond
-% response = zeros(nTrial,2);
-% response(:,1) = trial(:,4) == 1;
-% response(:,2) = trial(:,4) == -1;
-% 
-% % Summarize the response with figure 
-% responseEvaluation(target, response,{'Animate', 'Inanimate'});
-% 
-% % Save figure
-% figureFile = fullfile(sessDir,...
-%     sprintf('sub%02d_sess%02d_run%02d.jpg',subID,sessID,runID));
-% print(figureFile,'-djpeg');
 
 %% Save data for this run
 clear img imgStart imgEnd
@@ -297,35 +283,5 @@ fprintf('action HACS fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
 if Test == 1
     fprintf('Testing action HACS fMRI ---- DONE!\n')
 end
-% function responseEvaluation(target,response,condName)
-% % responseEvaluation(target,response,condName)
-% % target, response,rt,condName
-% 
-% idx = any(response,2);% only keep trial with response
-% [cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
-% figure('Units','normalized','Position',[0 0 0.5 0.5])
-% % subplot(1,2,1), 
-% imagesc(cMat);
-% title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));
-% axis square
-% set(gca,'Xtick',1:length(cMat), 'XTickLabel',condName,...
-%     'Ytick',1:length(cMat),'YTickLabel',condName);
-% colorbar
-% text(0.75,1,sprintf('%.2f',cPer(1,3)),'FontSize',50,'Color','r');% hit
-% text(0.75,2,sprintf('%.2f',cPer(1,1)),'FontSize',50,'Color','r');% miss
-% text(1.75,1,sprintf('%.2f',cPer(1,2)),'FontSize',50,'Color','r');% false alarm
-% text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
-
-% subplot(1,2,2), bar(cPer);
-% set(gca,'XTickLabel',condName);
-% ylabel('Rate')
-% axis square
-% legend({'Miss','False alarm','Hit','Correct reject'},...
-%    'Orientation','vertical' ,'Location','northeastoutside' )
-% legend boxoff
-
-
-
-
 
 
