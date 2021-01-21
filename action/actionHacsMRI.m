@@ -77,7 +77,6 @@ fixSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixAngle/180*pi/2)));
 dsRect = [xCenter-videoPixelHor/2, yCenter-videoPixelHor/2,...
     xCenter+videoPixelVer/2, yCenter+videoPixelVer/2];
 
-
 %% Response keys setting
 % PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
@@ -171,7 +170,7 @@ while true
 end
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
-onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
+onDur = 2 - 0.5*flipInterval; % on duration for a stimulus
 runDur = 480; % duration for a run
 beginDur = 16; % beigining fixation duration
 endDur = 16; % ending fixation duration
@@ -197,7 +196,7 @@ for t = 1:nTrial
     
     % If press escape, then break the experiment
     while KbCheck(), end % empty the key buffer
-    while 1 %GetSecs - tStim < onDur
+    while GetSecs - tStim < onDur
         tex = Screen('GetMovieImage', wptr, mvPtr);
         % wait response
         [keyIsDown, ~, keyCode] = KbCheck();
@@ -208,7 +207,7 @@ for t = 1:nTrial
         if tex <= 0
             break;
         end
-        % draw frame on the screen
+        % Draw frame on the screen
         Screen('DrawTexture', wptr, tex, [], dsRect);
         Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
             xCenter+fixSize/2, yCenter+fixSize/2], fixThickness);
@@ -228,7 +227,7 @@ for t = 1:nTrial
     
     % If press escape, then break the experiment
     while KbCheck(), end % empty the key buffer
-    while GetSecs - tStim < tEnd(t)
+    while GetSecs - tStart < tEnd(t)
         [keyIsDown, ~, keyCode] = KbCheck();
         if keyIsDown
             if keyCode(escKey),sca; return; end
@@ -253,7 +252,7 @@ ShowCursor;
 Screen('CloseAll');
 
 %% Save data for this run
-clear img imgStart imgEnd
+clear imgStart imgEnd
 resultFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_run%02d.mat',subID,sessID,runID));
 
