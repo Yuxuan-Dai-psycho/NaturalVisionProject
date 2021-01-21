@@ -2,7 +2,7 @@ function trial = actionHacsMRI(subID,sessID,runID)
 % function [subject,task] = actionHacsMRI(subID,sessID,runID)
 % Action HACS fMRI experiment stimulus procedure
 % 30 subject will do one session, the best 10 from them will do another 3 sessions
-% subject do Interior vs Exterior discrimination task
+% Subject do passive view task
 % subID, subjet ID, integer[1-30]
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-8]
@@ -19,7 +19,7 @@ if ~ismember(runID, 1:8), error('runID is a integer within [1:8]!'); end
 nRun = 8;
 nRepeat = nRun/2; % repeat time of classes in one session
 % Check continued subject id
-continuedSubID = []; % complete it after first part experiment.
+continuedSubID = []; % complete it after the first part experiment.
 if (sessID > 1) && (~ismember(subID, continuedSubID))
     error(['subID is not in continuedID within ' mat2str(continuedSubID)]); end
 
@@ -50,12 +50,12 @@ else
     Test = 0;
 end
 %% Screen setting
-Screen('Preference', 'SkipSyncTests', 1);
+Screen('Preference', 'SkipSyncTests', 2);
 if runID > 1
     Screen('Preference','VisualDebugLevel',3);
 end
-% Screen('Preference','VisualDebugLevel',4);
-% Screen('Preference','SuppressAllWarnings',1);
+Screen('Preference','VisualDebugLevel',4);
+Screen('Preference','SuppressAllWarnings',1);
 bkgColor = [128 128 128]; % For no specific reason, set median of 255 
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
@@ -110,13 +110,13 @@ runClass = sessClass(:,runID);
 % Collect trial info for this run
 nStim = length(runStim);
 nTrial = nStim;
-trial = zeros(nTrial, 6); % [onset, class, dur, key, RT, timing error]
+trial = zeros(nTrial, 4); % [onset, class, dur, timing error]
 trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Load stimulus and instruction
 % Visule angle for stimlus and fixation
 imgAngle = 16;
-fixAngle = 0.2;
+fixAngle = 0.5;
 
 % Visual angle to pixel
 pixelPerMilimeterHor = 1024/390;
@@ -152,7 +152,7 @@ while true
     end
 end
 readyDotColor = [255 0 0];
-Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, readyDotColor, [], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
 
@@ -170,11 +170,12 @@ onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
 runDur = 480; % duration for a run
 beginDur = 16; % beigining fixation duration
 endDur = 16; % ending fixation duration
-fixColor = [0 0 0]; % color of fixation 
+fixColor = [255 255 255]; % color of fixation 
 tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
 
 % Show begining fixation
-Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
+Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
+    xCenter+fixSize/2, yCenter+fixSize/2], 3);
 Screen('DrawingFinished',wptr);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
@@ -183,57 +184,48 @@ WaitSecs(beginDur);
 tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
-    [mvPtr, ~] = Screen('OpenMovie', wptr, videoPath{t});
+    mvPtr = Screen('OpenMovie', wptr, videoPath{t});
     Screen('PlayMovie', mvPtr, 1); % 1 means the normal speed    
+%     Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
+%         xCenter+fixSize/2, yCenter+fixSize/2], 3);
+%     Screen('DrawingFinished',wptr);
+%     tStim = Screen('Flip',wptr);
+%     trial(t, 4) = tStim - tStart; % timing error
+    tStim = GetSecs;
+    % If press escape, then break the experiment
+    while KbCheck(), end % empty the key buffer
+    while GetSecs - tStim < onDur
+        tex = Screen('GetMovieImage', wptr, mvPtr);
+        % wait response
+        [keyIsDown, ~, keyCode] = KbCheck();
+        if keyIsDown
+            if keyCode(escKey),sca; return; end
+        end
+%         if tex <= 0
+%             break;
+%         end
+        Screen('DrawTexture', wptr, tex, [], rect);
+        Screen('Flip', wptr);
+        Screen('Close', tex)
+    end
+    % close movie
+    Screen('PlayMovie', mvPtr, 0); % 0 means stop playing
+    Screen('CloseMovie', mvPtr); % close movie file
+        
+    % Show fixation
     Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
         xCenter+fixSize/2, yCenter+fixSize/2], 3);
     Screen('DrawingFinished',wptr);
-    tStim = Screen('Flip',wptr);
-    Screen('Close',stimTexture);
-    trial(t, 6) = tStim - tStart; % timing error
-    
-    % If subject responds in stimulus presenting, we record it
-    key = 0; rt = 0;
-    while KbCheck(), end % empty the key buffer
-    while GetSecs - tStim < onDur
-        [keyIsDown, tKey, keyCode] = KbCheck();
-        if keyIsDown
-            if keyCode(escKey),sca; return;
-            elseif keyCode(animateKey1) || keyCode(animateKey2)
-                key = 1; rt = tKey - tStim;
-            elseif keyCode(inanimateKey1)|| keyCode(inanimateKey2)
-                key = -1; rt = tKey - tStim;
-            end
-        end
-    end
-  
-    % Show fixation
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
-    Screen('DrawingFinished',wptr);
     Screen('Flip', wptr);
     
-    % If subject has ready responded in stimtulus presenting, we'll not
-    % record it in fixation period; if not, we record it.
-    if rt
-        while GetSecs - tStart < tEnd(t)
-            [keyIsDown, ~, keyCode] = KbCheck();
-            if keyIsDown && keyCode(escKey), sca; return; end
-        end
-    else
-        while GetSecs - tStart < tEnd(t)
-            [keyIsDown, tKey, keyCode] = KbCheck();
-            if keyIsDown
-                if keyCode(escKey),sca; return;
-                elseif keyCode(animateKey1) || keyCode(animateKey2)
-                    key = 1; rt = tKey - tStim;
-                elseif keyCode(inanimateKey1)|| keyCode(inanimateKey2)
-                    key = -1; rt = tKey - tStim;
-                end
-            end
+    % If press escape, then break the experiment
+    while KbCheck(), end % empty the key buffer
+    while GetSecs - tStim < tEnd(t)
+        [keyIsDown, ~, keyCode] = KbCheck();
+        if keyIsDown
+            if keyCode(escKey),sca; return; end
         end
     end
-    trial(t, 4:5) = [key,rt];
 end
 
 % Wait ending fixation
@@ -253,26 +245,26 @@ ShowCursor;
 Screen('CloseAll');
 
 %% Evaluate the response
-load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
-% trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
-% Make target matrix nTrial x nCond
-target = zeros(nTrial,2);
-animate_label = animate_label(trial(:,2));
-target(:,1) = animate_label == 1;
-target(:,2) = animate_label == -1;
-
-% Make response matrix nTrial x nCond
-response = zeros(nTrial,2);
-response(:,1) = trial(:,4) == 1;
-response(:,2) = trial(:,4) == -1;
-
-% Summarize the response with figure 
-responseEvaluation(target, response,{'Animate', 'Inanimate'});
-
-% Save figure
-figureFile = fullfile(sessDir,...
-    sprintf('sub%02d_sess%02d_run%02d.jpg',subID,sessID,runID));
-print(figureFile,'-djpeg');
+% load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
+% % trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
+% % Make target matrix nTrial x nCond
+% target = zeros(nTrial,2);
+% animate_label = animate_label(trial(:,2));
+% target(:,1) = animate_label == 1;
+% target(:,2) = animate_label == -1;
+% 
+% % Make response matrix nTrial x nCond
+% response = zeros(nTrial,2);
+% response(:,1) = trial(:,4) == 1;
+% response(:,2) = trial(:,4) == -1;
+% 
+% % Summarize the response with figure 
+% responseEvaluation(target, response,{'Animate', 'Inanimate'});
+% 
+% % Save figure
+% figureFile = fullfile(sessDir,...
+%     sprintf('sub%02d_sess%02d_run%02d.jpg',subID,sessID,runID));
+% print(figureFile,'-djpeg');
 
 %% Save data for this run
 clear img imgStart imgEnd
@@ -300,29 +292,29 @@ fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
 % Print sucess info
-fprintf('action ImageNet fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+fprintf('action HACS fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
 if Test == 1
-    fprintf('Testing action ImageNet fMRI ---- DONE!\n')
+    fprintf('Testing action HACS fMRI ---- DONE!\n')
 end
-function responseEvaluation(target,response,condName)
-% responseEvaluation(target,response,condName)
-% target, response,rt,condName
-
-idx = any(response,2);% only keep trial with response
-[cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
-figure('Units','normalized','Position',[0 0 0.5 0.5])
-% subplot(1,2,1), 
-imagesc(cMat);
-title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));
-axis square
-set(gca,'Xtick',1:length(cMat), 'XTickLabel',condName,...
-    'Ytick',1:length(cMat),'YTickLabel',condName);
-colorbar
-text(0.75,1,sprintf('%.2f',cPer(1,3)),'FontSize',50,'Color','r');% hit
-text(0.75,2,sprintf('%.2f',cPer(1,1)),'FontSize',50,'Color','r');% miss
-text(1.75,1,sprintf('%.2f',cPer(1,2)),'FontSize',50,'Color','r');% false alarm
-text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
+% function responseEvaluation(target,response,condName)
+% % responseEvaluation(target,response,condName)
+% % target, response,rt,condName
+% 
+% idx = any(response,2);% only keep trial with response
+% [cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
+% figure('Units','normalized','Position',[0 0 0.5 0.5])
+% % subplot(1,2,1), 
+% imagesc(cMat);
+% title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));
+% axis square
+% set(gca,'Xtick',1:length(cMat), 'XTickLabel',condName,...
+%     'Ytick',1:length(cMat),'YTickLabel',condName);
+% colorbar
+% text(0.75,1,sprintf('%.2f',cPer(1,3)),'FontSize',50,'Color','r');% hit
+% text(0.75,2,sprintf('%.2f',cPer(1,1)),'FontSize',50,'Color','r');% miss
+% text(1.75,1,sprintf('%.2f',cPer(1,2)),'FontSize',50,'Color','r');% false alarm
+% text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
 
 % subplot(1,2,2), bar(cPer);
 % set(gca,'XTickLabel',condName);
