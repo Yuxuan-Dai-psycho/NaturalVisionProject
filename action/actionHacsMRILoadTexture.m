@@ -1,4 +1,4 @@
-% function trial = actionHacsMRILoadTexture(subID,sessID,runID)
+function trial = actionHacsMRILoadTexture(subID,sessID,runID)
 % function [subject,task] = actionHacsMRI(subID,sessID,runID)
 % Action HACS fMRI experiment stimulus procedure
 % 30 subject will do one session, the best 10 from them will do another 3 sessions
@@ -7,8 +7,8 @@
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-8]
 % workdir(or codeDir) -> sitmulus/instruciton/data 
-% if nargin < 3, sessID = 1; end
-subID=1;sessID=1;runID=1;
+% subID=1;sessID=1;runID=1;
+if nargin < 3, sessID = 1; end
 
 %% Check subject information
 % Check subject id
@@ -133,15 +133,22 @@ trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 % Load stimuli
 stimDir = fullfile(workDir, 'stimulus', 'video');
 videoTextureSum = cell(nStim, 1);
-count = 1;          % Number of loaded movie frames.
+
 for t = 1:nStim
+    % prepare params
+    count = 1;          % Number of loaded movie frames.
+    lastpts = -1;       % Presentation timestamp of last frame.
+    pts = -1;
+    speed = 20;         % Play video in {speed}x the normal speed, 
+                        % Decreasing it will make preload textures slower
+    % start loading stimulus
     videoPath = fullfile(stimDir, runClass{t}, runStim{t});
     [video,videoDur,fps] = Screen('OpenMovie', wptr, videoPath);
-    Screen('PlayMovie', video, 100, 0, 0);
+    Screen('PlayMovie', video, speed, 0, 0);
     % Initialize a texture container for this clip
     videoTextureTmp = zeros(ceil(videoDur * fps), 1); 
-    while 1
-        textureHandle = Screen('GetMovieImage', wptr, video);
+    while (pts >= lastpts) && (count <= size(videoTextureTmp, 1))
+        [textureHandle, pts] = Screen('GetMovieImage', wptr, video);
         if textureHandle <= 0, break; end        % End of movie. break out of loop.
         videoTextureTmp(count) = textureHandle;  % Store its texture handle 
         count = count + 1;                       % Update count frame
@@ -187,8 +194,8 @@ end
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 2 - 0.5*flipInterval; % on duration for a stimulus
 runDur = 480; % duration for a run
-beginDur = 1; % beigining fixation duration
-endDur = 1; % ending fixation duration
+beginDur = 16; % beigining fixation duration
+endDur = 16; % ending fixation duration
 fixColor = [255 255 255]; % color of fixation 
 fixThickness = 2; % thickness of fixation 
 tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
@@ -205,7 +212,7 @@ tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
     videoTexture = videoTextureSum{t};
-    count = size(videoTexture, 2);
+    count = size(videoTexture, 1);
     currentIndex = 1; % current index of frame
     tStim = GetSecs;
     trial(t, 4) = tStim - tStart; % timing error
@@ -214,6 +221,8 @@ for t = 1:nTrial
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStim < onDur
         tex = videoTexture(currentIndex);
+        % End of movie. break out of loop.
+        if tex <= 0, break; end
         Screen('DrawTexture', wptr, tex, [], dsRect);
         % wait response
         [keyIsDown, ~, keyCode] = KbCheck();
