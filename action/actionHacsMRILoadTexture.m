@@ -1,4 +1,4 @@
-function trial = actionHacsMRI(subID,sessID,runID)
+function trial = actionHacsMRILoadTexture(subID,sessID,runID)
 % function [subject,task] = actionHacsMRI(subID,sessID,runID)
 % Action HACS fMRI experiment stimulus procedure
 % 30 subject will do one session, the best 10 from them will do another 3 sessions
@@ -7,6 +7,7 @@ function trial = actionHacsMRI(subID,sessID,runID)
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-8]
 % workdir(or codeDir) -> sitmulus/instruciton/data 
+% subID=1;sessID=1;runID=1;
 if nargin < 3, sessID = 1; end
 
 %% Check subject information
@@ -25,7 +26,7 @@ if (sessID > 1) && (~ismember(subID, continuedSubID))
 
 %% Data dir
 % Make work dir
-workDir = pwd;
+workDir = 'D:\fMRI\action';
 
 % Make data dir
 dataDir = fullfile(workDir,'data');
@@ -130,10 +131,30 @@ trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Load stimulus and instruction
 % Load stimuli
-stimDir = fullfile(workDir,'stimulus', 'video');
-videoPath = cell(nStim,1);
+stimDir = fullfile(workDir, 'stimulus', 'video');
+videoTextureSum = cell(nStim, 1);
+
 for t = 1:nStim
-    videoPath{t} = fullfile(stimDir, runClass{t}, runStim{t});
+    % prepare params
+    count = 1;          % Number of loaded movie frames.
+    lastpts = -1;       % Presentation timestamp of last frame.
+    pts = -1;
+    speed = 20;         % Play video in {speed}x the normal speed, 
+                        % Decreasing it will make preload textures slower
+    % start loading stimulus
+    videoPath = fullfile(stimDir, runClass{t}, runStim{t});
+    [video,videoDur,fps] = Screen('OpenMovie', wptr, videoPath);
+    Screen('PlayMovie', video, speed, 0, 0);
+    % Initialize a texture container for this clip
+    videoTextureTmp = zeros(ceil(videoDur * fps), 1); 
+    while (pts >= lastpts) && (count <= size(videoTextureTmp, 1))
+        [textureHandle, pts] = Screen('GetMovieImage', wptr, video);
+        if textureHandle <= 0, break; end        % End of movie. break out of loop.
+        videoTextureTmp(count) = textureHandle;  % Store its texture handle 
+        count = count + 1;                       % Update count frame
+    end
+    videoTextureSum{t} = videoTextureTmp;
+    Screen('CloseMovie', video); % close movie file
 end
 
 % Load  instruction
@@ -155,6 +176,7 @@ while true
     if keyIsDown && (keyCode(animateKey1) || keyCode(animateKey2)), break;
     end
 end
+
 readyDotColor = [255 0 0];
 Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, readyDotColor, [], 2);
 Screen('DrawingFinished',wptr);
@@ -189,33 +211,33 @@ WaitSecs(beginDur);
 tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
-    mvPtr = Screen('OpenMovie', wptr, videoPath{t});
-    Screen('PlayMovie', mvPtr, 1); % 1 means the normal speed    
+    videoTexture = videoTextureSum{t};
+    count = size(videoTexture, 1);
+    currentIndex = 1; % current index of frame
     tStim = GetSecs;
     trial(t, 4) = tStim - tStart; % timing error
     
     % If press escape, then break the experiment
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStim < onDur
-        tex = Screen('GetMovieImage', wptr, mvPtr);
+        tex = videoTexture(currentIndex);
+        % End of movie. break out of loop.
+        if tex <= 0, break; end
+        Screen('DrawTexture', wptr, tex, [], dsRect);
         % wait response
         [keyIsDown, ~, keyCode] = KbCheck();
         if keyIsDown
             if keyCode(escKey),sca; return; end
         end
-        % End of movie. break out of loop.
-        if tex <= 0, break; end
         % Draw frame on the screen
-        Screen('DrawTexture', wptr, tex, [], dsRect);
         Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
             xCenter+fixSize/2, yCenter+fixSize/2], fixThickness);
         Screen('DrawingFinished',wptr);
         Screen('Flip', wptr);
         Screen('Close', tex)
+        % Update frame index
+        currentIndex = mod(currentIndex, count) + 1;
     end
-    % Close movie
-    Screen('PlayMovie', mvPtr, 0); % 0 means stop playing
-    Screen('CloseMovie', mvPtr); % close movie file
         
     % Show fixation
     Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
