@@ -2,13 +2,11 @@ function trial = actionHacsMRILoadTexture(subID,sessID,runID)
 % function [subject,task] = actionHacsMRI(subID,sessID,runID)
 % Action HACS fMRI experiment stimulus procedure
 % 30 subject will do one session, the best 10 from them will do another 3 sessions
-% Subject do passive view task
+% Subject do household vs not-household activities task
 % subID, subjet ID, integer[1-30]
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-8]
 % workdir(or codeDir) -> sitmulus/instruciton/data 
-% subID=1;sessID=1;runID=1;
-if nargin < 3, sessID = 1; end
 
 %% Check subject information
 % Check subject id
@@ -43,13 +41,11 @@ if ~exist(subDir,'dir'), mkdir(subDir),end
 % Make session dir
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
-%% for Test checking
-if subID ==10086
-   subID = 1; 
-   Test = 1;
-else
-    Test = 0;
-end
+
+%% For Test checking
+if subID == 10086, subID = 1; Test = 1;
+else, Test = 0; end
+
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 2);
 if runID > 1
@@ -84,11 +80,11 @@ KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
 
-% Left hand for interior and right hand for exterior
-animateKey1 = KbName('1!'); % Left hand:1!
-animateKey2 = KbName('2@'); % Left hand:2@
-inanimateKey1 = KbName('3#'); % Right hand: 3#
-inanimateKey2 = KbName('4$'); % Right hand: 4$
+% Left hand for household and right hand for not-household
+householdKey1 = KbName('1!'); % Left hand:1!
+householdKey2 = KbName('2@'); % Left hand:2@
+notHouseholdKey1 = KbName('3#'); % Right hand: 3#
+notHouseholdKey2 = KbName('4$'); % Right hand: 4$
 
 %% Make design for this session
 % Set design dir
@@ -126,7 +122,7 @@ runClass = sessClass(:,runID);
 % Collect trial info for this run
 nStim = length(runStim);
 nTrial = nStim;
-trial = zeros(nTrial, 4); % [onset, class, dur, timing error]
+trial = zeros(nTrial, 6); % [onset, class, dur, key, RT, timing error]
 trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Load stimulus and instruction
@@ -137,18 +133,16 @@ videoTextureSum = cell(nStim, 1);
 for t = 1:nStim
     % prepare params
     count = 1;          % Number of loaded movie frames.
-    lastpts = -1;       % Presentation timestamp of last frame.
-    pts = -1;
-    speed = 20;         % Play video in {speed}x the normal speed, 
+    speed = 80;         % Play video in {speed}x the normal speed, 
                         % Decreasing it will make preload textures slower
     % start loading stimulus
     videoPath = fullfile(stimDir, runClass{t}, runStim{t});
     [video,videoDur,fps] = Screen('OpenMovie', wptr, videoPath);
-    Screen('PlayMovie', video, speed, 0, 0);
+    Screen('PlayMovie', video, speed);
     % Initialize a texture container for this clip
     videoTextureTmp = zeros(ceil(videoDur * fps), 1); 
-    while (pts >= lastpts) && (count <= size(videoTextureTmp, 1))
-        [textureHandle, pts] = Screen('GetMovieImage', wptr, video);
+    while count <= size(videoTextureTmp, 1)
+        textureHandle = Screen('GetMovieImage', wptr, video);
         if textureHandle <= 0, break; end        % End of movie. break out of loop.
         videoTextureTmp(count) = textureHandle;  % Store its texture handle 
         count = count + 1;                       % Update count frame
@@ -173,7 +167,7 @@ Screen('Close',startTexture);
 while KbCheck(); end
 while true
     [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && (keyCode(animateKey1) || keyCode(animateKey2)), break;
+    if keyIsDown && (keyCode(householdKey1) || keyCode(householdKey2)), break;
     end
 end
 
@@ -199,6 +193,7 @@ endDur = 16; % ending fixation duration
 fixColor = [255 255 255]; % color of fixation 
 fixThickness = 2; % thickness of fixation 
 tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
+if Test == 1, beginDur = 1;end  % test part
 
 % Show begining fixation
 Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
@@ -215,28 +210,35 @@ for t = 1:nTrial
     count = size(videoTexture, 1);
     currentIndex = 1; % current index of frame
     tStim = GetSecs;
-    trial(t, 4) = tStim - tStart; % timing error
+    trial(t, 6) = tStim - tStart; % timing error
     
-    % If press escape, then break the experiment
+    % If subject responds in stimulus presenting, we record it
+    key = 0; rt = 0;
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStim < onDur
+        % Draw movie frame
         tex = videoTexture(currentIndex);
-        % End of movie. break out of loop.
-        if tex <= 0, break; end
+        if tex <= 0, break; end   % End of movie. break out of loop.
         Screen('DrawTexture', wptr, tex, [], dsRect);
-        % wait response
-        [keyIsDown, ~, keyCode] = KbCheck();
-        if keyIsDown
-            if keyCode(escKey),sca; return; end
-        end
-        % Draw frame on the screen
+        currentIndex = mod(currentIndex, count) + 1;  % Update frame index
+
+        % Draw fixation on the screen
         Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
             xCenter+fixSize/2, yCenter+fixSize/2], fixThickness);
         Screen('DrawingFinished',wptr);
         Screen('Flip', wptr);
         Screen('Close', tex)
-        % Update frame index
-        currentIndex = mod(currentIndex, count) + 1;
+        
+        % Wait response
+        [keyIsDown, tKey, keyCode] = KbCheck();
+        if keyIsDown
+            if keyCode(escKey),sca; return; 
+            elseif keyCode(householdKey1) || keyCode(householdKey2)
+                key = 1; rt = tKey - tStim;
+            elseif keyCode(notHouseholdKey1)|| keyCode(notHouseholdKey2)
+                key = -1; rt = tKey - tStim;
+            end
+        end
     end
         
     % Show fixation
@@ -245,14 +247,27 @@ for t = 1:nTrial
     Screen('DrawingFinished',wptr);
     Screen('Flip', wptr);
     
-    % If press escape, then break the experiment
-    while KbCheck(), end % empty the key buffer
-    while GetSecs - tStart < tEnd(t)
-        [keyIsDown, ~, keyCode] = KbCheck();
-        if keyIsDown
-            if keyCode(escKey),sca; return; end
+    % If subject has ready responded in stimtulus presenting, we'll not
+    % record it in fixation period; if not, we record it.
+    if rt
+        while GetSecs - tStart < tEnd(t)
+            [keyIsDown, ~, keyCode] = KbCheck();
+            if keyIsDown && keyCode(escKey), sca; return; end
+        end
+    else
+        while GetSecs - tStart < tEnd(t)
+            [keyIsDown, tKey, keyCode] = KbCheck();
+            if keyIsDown
+                if keyCode(escKey),sca; return;
+                elseif keyCode(householdKey1) || keyCode(householdKey2)
+                    key = 1; rt = tKey - tStim;
+                elseif keyCode(notHouseholdKey1)|| keyCode(notHouseholdKey2)
+                    key = -1; rt = tKey - tStim;
+                end
+            end
         end
     end
+    trial(t, 4:5) = [key,rt];
 end
 
 % Wait ending fixation
