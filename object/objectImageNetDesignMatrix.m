@@ -1,4 +1,4 @@
-% The script generates design matrix for BrainImageNet train set
+% The script generates design matrix for ImageNet stimuli
 % Organize both stimulus image and stimulus order information into
 % BrainImageNet(BIN) structure
 

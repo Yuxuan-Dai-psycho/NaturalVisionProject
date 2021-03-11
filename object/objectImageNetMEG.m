@@ -1,5 +1,5 @@
-function trial = binMEGtrain(subID,sessID,runID)
-% function [subject,task] = binMRItrain(subID,sessID,runID)
+function trial = objectImageNetMEG(subID,sessID,runID)
+% function [subject,task] = objectImageNetMEG(subID,sessID,runID)
 % Brain ImageNet MEG experiment stimulus procedure
 % subID, subjet ID, integer[1-20] 
 % sessID, session ID, integer [1-4]
@@ -14,7 +14,7 @@ if ~ismember(sessID, 1:2), error('sessID is a integer within [1:2]!');end
 if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 
 %% Data dir 
-workDir = './stim';
+  = './stim';
 stimDir = fullfile(workDir,'images');
 designDir = fullfile(workDir,'MEGDesignMatrix');
 
