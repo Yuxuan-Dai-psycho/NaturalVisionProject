@@ -1,3 +1,2 @@
-# BrainImageNet
-Brain imaging data for ImageNet
-
+# NaturalVisionProject
+Brain imaging data for natural vision
