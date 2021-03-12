@@ -17,26 +17,22 @@ if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
 %% Data dir
 % Make work dir
 workDir = pwd;
-
 % Make data dir
 dataDir = fullfile(workDir,'data');
 if ~exist(dataDir,'dir'), mkdir(dataDir), end
-
 % Make fmri dir
 mriDir = fullfile(dataDir,'fmri');
 if ~exist(mriDir,'dir'), mkdir(mriDir), end
-
-% Make test dir for the subject
-testDir = fullfile(mriDir,'test');
-if ~exist(testDir,'dir'), mkdir(testDir),end
-
+% Make coco dir  
+cocoDir = fullfile(mriDir,'coco');
+if ~exist(cocoDir,'dir'), mkdir(cocoDir),end
 % Make subject dir
-subDir = fullfile(testDir,sprintf('sub%02d', subID));
+subDir = fullfile(cocoDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
-
 % Make session dir
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
+
 %% for Test checking
 if subID ==10086
     subID = 1; 
@@ -120,9 +116,9 @@ while true
 end
 
 %% Make design
-% [onset,cond,trueAnswer, key, rt, timingError].
+% [onset,cond,trueAnswer, key, rt].
 nTrial = 150;
-trial = zeros(nTrial, 6);
+trial = zeros(nTrial, 5);
 
 % Randomize condition: 1-120 images
 cond = 1:nTrial;% total trials
@@ -180,7 +176,7 @@ for t = 1:nTrial
         Screen('DrawingFinished',wptr);
     end
     tStim = Screen('Flip',wptr);
-    trial(t, 6) = tStim - tStart; % timing error
+    trial(t, 1) = tStim - tStart; % stimulus onset
     
     % If subject respond in stimulus presenting, we record it
     key = 0; rt = 0;
@@ -199,7 +195,8 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
     Screen('DrawingFinished',wptr);
-    Screen('Flip',wptr);
+    tFix = Screen('Flip', wptr);
+    trial(t, 3) = tFix - tStim; % stimulus duration
 
     % If subject have ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
@@ -239,7 +236,7 @@ ShowCursor;
 Screen('CloseAll');
 
 %% Evaluate the response
-% trial, nTial * 6 array; [onset,cond,trueAnswer, key, rt, timingError].
+% trial, nTial * 5 array; [onset,cond,trueAnswer, key, rt].
 % Make target matrix nTrial x nCond
 target = zeros(nTrial,2);
 target(:,1) = trial(:,3) == 1;

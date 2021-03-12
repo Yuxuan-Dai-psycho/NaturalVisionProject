@@ -1,11 +1,13 @@
-function trial = objectImageNetMRI(subID,sessID,runID)
-% function [subject,task] = objectImageNetMRI(subID,sessID,runID)
-% Brain ImageNet fMRI experiment stimulus procedure
-% subject do animate vs. inanimate discrimination task
-% subID, subjet ID, integer[1-50]
+function trial = objectImageNetMEG(subID,sessID,runID)
+% function [subject,task] = objectImageNetMEG(subID,sessID,runID)
+% ImageNet MEG experiment stimulus procedure
+% subjects perform animate vs. inanimate discrimination task
+% subID, subjet ID, integer[1-30]
 % sessID, session ID, integer [1-4]
-% runID, run ID, integer [1-10]
-% workdir(or codeDir) -> sitmulus/instruciton/data 
+% runID, run ID, integer [1-5]
+% workDir(or codeDir) -> sitmulus/instruciton/data 
+% ImageNet MEG has two rounds of exp. 
+% Two sessions  will be conducted in each round.
 
 %% Check subject information
 % Check subject id
@@ -14,38 +16,37 @@ if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
 if subID <= 10
     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
 else
-    if ~ismember(sessID, 1), error('sessID can only be [1] for SubID 11-50!');end
+    if ~ismember(sessID, 1:2), error('sessID can only be [1:2] for SubID 11-30!');end
 end
 % Check run id
-if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
-nRun = 10;
+if ~ismember(runID, 1:5), error('runID is a integer within [1:5]!'); end
+nRun = 5;
 
 %% Data dir
-% Make work dir
+% Check workDir for MEG test 
 workDir = pwd;
+fprintf('MEG ImageNet workDir is:\n%s\n',workDir)
+
 % Make data dir
 dataDir = fullfile(workDir,'data');
 if ~exist(dataDir,'dir'), mkdir(dataDir), end
-% Make fmri dir
-mriDir = fullfile(dataDir,'fmri');
+
+% Make meg dir
+mriDir = fullfile(dataDir,'meg');
 if ~exist(mriDir,'dir'), mkdir(mriDir), end
-% Make imagenet dir
-imagenetDir = fullfile(mriDir,'imagenet');
-if ~exist(imagenetDir,'dir'), mkdir(imagenetDir),end
+
+% Make ImageNet dir
+trainDir = fullfile(mriDir,'imagenet');
+if ~exist(trainDir,'dir'), mkdir(trainDir),end
+
 % Make subject dir
-subDir = fullfile(imagenetDir,sprintf('sub%02d', subID));
+subDir = fullfile(trainDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
+
 % Make session dir
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
-%% for Test checking
-if subID ==10086
-   subID = 1; 
-   Test = 1;
-else
-    Test = 0;
-end
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
 if runID > 1
@@ -59,17 +60,26 @@ screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 [xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
 HideCursor;
 
-%% Response keys setting
-% PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
-KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
+%% IO setting
+ioObj = io64;
+status = io64(ioObj);
+address = hex2dec('D020');
+if status,error('The driver installation process was successful'); end 
+startMark = 1; endMark = 8; % Mark for begin and end of the recording
+stimMark = 2; respMark = 4; % Mark for stimulus onset and response timing
+markDur = 0.005;
+
+
+%% Key setting
+KbName('UnifyKeyNames'); 
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
-
 % Left hand for animate and right hand for inanimate
 animateKey1 = KbName('1!'); % Left hand:1!
 animateKey2 = KbName('2@'); % Left hand:2@
 inanimateKey1 = KbName('3#'); % Right hand: 3#
 inanimateKey2 = KbName('4$'); % Right hand: 4$
+
 
 %% Make design for this session
 % Set design dir
@@ -78,28 +88,37 @@ designFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
 if ~exist(designFile,'file')
     load(fullfile(designDir,'BIN.mat'),'BIN');
-    sess = 4*(subID-1)+ sessID;
-    sessPar = squeeze(BIN.paradigmClass(:,sess,:));
-    classOrder = sessPar(:,2);
-    sessStim = BIN.stimulus(classOrder,sess);
-    sessStim = reshape(sessStim,[100,nRun]);
-    sessClass = reshape(BIN.classID(classOrder), [100,nRun]);
-    sessPar = reshape(sessPar,[100,nRun,3]);
-    save(designFile,'sessStim','sessPar','sessClass');
+    if subID <= 10
+        sess = 4*(subID-1)+ sessID;
+    else
+        sess = 40 + 2*(subID-11) + sessID;
+    end
+    
+    % For each session, we have 5 runs, 200 images/run
+    classID = randperm(1:1000);
+    stimulus= reshape(BIN.stimulus(classID,sess),[200,nRun]);
+    className = reshape(BIN.classID(classID), [200,nRun]);
+    superClassName = reshape(BIN.superClassName(classID), [200,nRun]);
+    superClassID  = reshape(BIN.superClassID(classID), [200,nRun]);
+    save(designFile,'stimulus','classID','className',...
+        'superClassID','superClassName');
 end
 
 % Load session design
-load(designFile,'sessStim','sessPar','sessClass');
+load(designFile,'stimulus','classID');
 
 % Image for this run
-runStim = sessStim(:,runID);
-runClass = sessClass(:,runID);
+runStim = stimulus(:,runID); % 200 x 5 cell array 
+runClass = classID(:,runID); % 200 x 5 cell array
 
 % Collect trial info for this run
+% [class, onset, dur, soa, key, rt]
 nStim = length(runStim);
 nTrial = nStim;
-trial = zeros(nTrial, 5); % [onset, class, dur, key, RT]
-trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
+trial = zeros(nTrial, 6); % [class, onset, dur, soa, key, rt]
+trial(:,1) = classID(:,runID);  
+soa = 1.2 + 0.3 * rand(nTrial,1); % soa, [1.2,1.5] 
+trial(:,4) = soa; 
 
 %% Load stimulus and instruction
 % Visule angle for stimlus and fixation
@@ -133,7 +152,6 @@ Screen('PreloadTextures',wptr,startTexture);
 Screen('DrawTexture', wptr, startTexture);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
-Screen('Close',startTexture); 
 
 % Wait ready signal from subject
 while KbCheck(); end
@@ -147,23 +165,31 @@ Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
 
-% Wait trigger(S key) to begin the test
+fprintf(['*** Please ask MEG console to turn on MEG.\n' ...
+    '*** Afte MEG has been turn on, press S key to begin the exp.\n'])
+
+% Set trigger(S key) to begin the experiment
 while KbCheck(); end
 while true
-    [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && keyCode(startKey), break;
-    elseif keyIsDown && keyCode(escKey), sca; return;
+    [keyIsDown,tKey,keyCode] = KbCheck();
+    if keyIsDown && keyCode(startKey)
+        % Mark begining of exp 
+        io64(ioObj,address,startMark);
+        while GetSecs - tKey < markDur; end
+        io64(ioObj,address,0);
+        break;
+    elseif keyIsDown && keyCode(escKey)
+        sca; return;
     end
 end
+
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
-runDur = 480; % duration for a run
-beginDur = 16; % beigining fixation duration
-endDur = 16; % ending fixation duration
+beginDur = 1; % beigining fixation duration
+endDur = 1; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
-tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
 
 % Show begining fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
@@ -173,6 +199,7 @@ Screen('Flip',wptr);
 WaitSecs(beginDur);
 
 % Show stimulus
+% sti(0.5) --> fix( 0.7-1.0) --> next trial
 tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
@@ -182,9 +209,13 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
     Screen('DrawingFinished',wptr);
-    tStim = Screen('Flip',wptr);
     Screen('Close',stimTexture);
-    trial(t, 1) = tStim - tStart; % simulus onset
+    tStim = Screen('Flip',wptr);
+    % Mark onset of the stimulus
+    io64(ioObj,address,stimMark);
+    while GetSecs - tStim < markDur, end
+    io64(ioObj,address,0);
+    trial(t, 2) = tStim - tStart; % stimulus onset
     
     % If subject responds in stimulus presenting, we record it
     key = 0; rt = 0;
@@ -192,6 +223,10 @@ for t = 1:nTrial
     while GetSecs - tStim < onDur
         [keyIsDown, tKey, keyCode] = KbCheck();
         if keyIsDown
+            % Mark the rsponese
+            io64(ioObj,address,respMark);
+            while GetSecs - tKey < markDur, end
+            io64(ioObj,address,0);
             if keyCode(escKey),sca; return;
             elseif keyCode(animateKey1) || keyCode(animateKey2)
                 key = 1; rt = tKey - tStim;
@@ -211,14 +246,18 @@ for t = 1:nTrial
     % If subject has ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
     if rt
-        while GetSecs - tStart < tEnd(t)
+        while GetSecs - tStim < soa(t)
             [keyIsDown, ~, keyCode] = KbCheck();
             if keyIsDown && keyCode(escKey), sca; return; end
         end
     else
-        while GetSecs - tStart < tEnd(t)
+        while GetSecs - tStim < soa(t)
             [keyIsDown, tKey, keyCode] = KbCheck();
             if keyIsDown
+                % Mark the response
+                io64(ioObj,address,respMark);
+                while GetSecs - tKey < markDur, end
+                io64(ioObj,address,0);
                 if keyCode(escKey),sca; return;
                 elseif keyCode(animateKey1) || keyCode(animateKey2)
                     key = 1; rt = tKey - tStim;
@@ -228,11 +267,14 @@ for t = 1:nTrial
             end
         end
     end
-    trial(t, 4:5) = [key,rt];
+    trial(t, 5:6) = [key,rt];
 end
 
-% Wait ending fixation
-WaitSecs(endDur);
+% Mark ending of exp 
+tEnd = GetSecs;
+io64(ioObj,address,endMark);
+while GetSecs - tEnd < markDur, end
+io64(ioObj,address,0);
 
 % Show end instruction
 endTexture = Screen('MakeTexture', wptr, imgEnd);
@@ -240,8 +282,7 @@ Screen('PreloadTextures',wptr,endTexture);
 Screen('DrawTexture', wptr, endTexture);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
-Screen('Close',endTexture);
-WaitSecs(2);
+WaitSecs(endDur)
 
 % Show cursor and close all
 ShowCursor;
@@ -249,17 +290,17 @@ Screen('CloseAll');
 
 %% Evaluate the response
 load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
-% trial, nTial * 6 array;  % [onset, class, dur, key, RT, timing error]
+% trial, nTial * 6 array;  % [class, onset, dur, isi, key, RT]
 % Make target matrix nTrial x nCond
 target = zeros(nTrial,2);
-animate_label = animate_label(trial(:,2));
+animate_label = animate_label(trial(:,1));
 target(:,1) = animate_label == 1;
 target(:,2) = animate_label == -1;
 
 % Make response matrix nTrial x nCond
 response = zeros(nTrial,2);
-response(:,1) = trial(:,4) == 1;
-response(:,2) = trial(:,4) == -1;
+response(:,1) = trial(:,5) == 1;
+response(:,2) = trial(:,5) == -1;
 
 % Summarize the response with figure 
 responseEvaluation(target, response,{'Animate', 'Inanimate'});
@@ -295,15 +336,12 @@ fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
 % Print sucess info
-fprintf('BIN ImageNet fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+fprintf('MEG ImageNet:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
-if Test == 1
-    fprintf('Testing BIN ImageNet fMRI ---- DONE!\n')
-end
+
 function responseEvaluation(target,response,condName)
 % responseEvaluation(target,response,condName)
 % target, response,rt,condName
-
 idx = any(response,2);% only keep trial with response
 [cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
 figure('Units','normalized','Position',[0 0 0.5 0.5])
