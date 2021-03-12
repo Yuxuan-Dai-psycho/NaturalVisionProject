@@ -23,26 +23,22 @@ nRun = 10;
 %% Data dir
 % Make work dir
 workDir = pwd;
-
 % Make data dir
 dataDir = fullfile(workDir,'data');
 if ~exist(dataDir,'dir'), mkdir(dataDir), end
-
 % Make fmri dir
 mriDir = fullfile(dataDir,'fmri');
 if ~exist(mriDir,'dir'), mkdir(mriDir), end
-
-% Make train dir
-trainDir = fullfile(mriDir,'train');
-if ~exist(trainDir,'dir'), mkdir(trainDir),end
-
+% Make imagenet dir
+imagenetDir = fullfile(mriDir,'imagenet');
+if ~exist(imagenetDir,'dir'), mkdir(imagenetDir),end
 % Make subject dir
-subDir = fullfile(trainDir,sprintf('sub%02d', subID));
+subDir = fullfile(imagenetDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
-
 % Make session dir
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
+
 %% for Test checking
 if subID ==10086
    subID = 1; 
@@ -77,7 +73,7 @@ inanimateKey2 = KbName('4$'); % Right hand: 4$
 
 %% Make design for this session
 % Set design dir
-designDir = fullfile(workDir,'stimulus','train','designMatrix');
+designDir = fullfile(workDir,'stimulus','imagenet','designMatrix');
 designFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
 if ~exist(designFile,'file')
@@ -102,7 +98,7 @@ runClass = sessClass(:,runID);
 % Collect trial info for this run
 nStim = length(runStim);
 nTrial = nStim;
-trial = zeros(nTrial, 6); % [onset, class, dur, key, RT, timing error]
+trial = zeros(nTrial, 5); % [onset, class, dur, key, RT]
 trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Load stimulus and instruction
@@ -120,7 +116,7 @@ fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi
 fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 
 % Load stimuli
-stimDir = fullfile(workDir,'stimulus','train','images');
+stimDir = fullfile(workDir,'stimulus','imagenet','images');
 img = cell(nStim,1);
 for t = 1:nStim
     imgFile = fullfile(stimDir, runClass{t}, runStim{t});
@@ -188,7 +184,7 @@ for t = 1:nTrial
     Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
     Screen('Close',stimTexture);
-    trial(t, 6) = tStim - tStart; % timing error
+    trial(t, 1) = tStim - tStart; % simulus onset
     
     % If subject responds in stimulus presenting, we record it
     key = 0; rt = 0;
@@ -209,8 +205,9 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
     Screen('DrawingFinished',wptr);
-    Screen('Flip', wptr);
-    
+    tFix = Screen('Flip', wptr);
+    trial(t, 3) = tFix - tStim; % stimulus duration
+
     % If subject has ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
     if rt
