@@ -12,9 +12,9 @@ function trial = objectImageNetMEG(subID,sessID,runID)
 if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
 % Check session id
 if subID <= 10
-    if ~ismember(sessID, 1:2), error('sessID can be [1:2] for SubID 1-10!');end
+    if ~ismember(sessID, 1:4), error('sessID can be [1:2] for SubID 1-10!');end
 else
-    if ~ismember(sessID, 1), error('sessID can only be [1] for SubID 11-50!');end
+    if ~ismember(sessID, 1:2), error('sessID can only be [1] for SubID 11-50!');end
 end
 % Check run id
 if ~ismember(runID, 1:5), error('runID is a integer within [1:5]!'); end
@@ -89,7 +89,7 @@ if ~exist(designFile,'file')
     if subID <= 10
         sess = 4*(subID-1)+ sessID;
     else
-        sess = 40 + (subID-10);
+        sess = 40 + 2*(subID-11)+sessID;
     end
     
     % For each session, we have 5 runs, 200 images/run
@@ -162,11 +162,15 @@ Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
 
+fprintf(['*** Please ask MEG console to turn on MEG.\n' ...
+    '*** Afte MEG has been turn on, press S key to begin the exp.\n'])
+
 % Set trigger(S key) to begin MEG recording
 while KbCheck(); end
 while true
     [keyIsDown,tKey,keyCode] = KbCheck();
     if keyIsDown && keyCode(startKey)
+        % Mark
         io64(ioObj,address,startMark);
         while GetSecs - tKey < markDur; end
         io64(ioObj,address,0);
