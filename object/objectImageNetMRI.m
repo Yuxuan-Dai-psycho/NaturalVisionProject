@@ -1,6 +1,6 @@
 function trial = objectImageNetMRI(subID,sessID,runID)
 % function [subject,task] = objectImageNetMRI(subID,sessID,runID)
-% Brain ImageNet fMRI experiment stimulus procedure
+%  fMRI experiment for ImageNet stimulus in natural vision project
 % subject do animate vs. inanimate discrimination task
 % subID, subjet ID, integer[1-50]
 % sessID, session ID, integer [1-4]
@@ -99,7 +99,7 @@ runClass = sessClass(:,runID);
 nStim = length(runStim);
 nTrial = nStim;
 trial = zeros(nTrial, 5); % [onset, class, dur, key, RT]
-trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
+trial(:,1:3) = squeeze(sessPar(:,runID,:)); % [onset, class, dur]
 
 %% Load stimulus and instruction
 % Visule angle for stimlus and fixation
@@ -295,10 +295,10 @@ fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
 % Print sucess info
-fprintf('BIN ImageNet fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+fprintf('ImageNet fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
 if Test == 1
-    fprintf('Testing BIN ImageNet fMRI ---- DONE!\n')
+    fprintf('Testing ImageNet fMRI ---- DONE!\n')
 end
 function responseEvaluation(target,response,condName)
 % responseEvaluation(target,response,condName)

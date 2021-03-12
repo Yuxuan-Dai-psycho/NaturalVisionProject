@@ -1,6 +1,6 @@
 function trial = objectCoCoMRI(subID, sessID, runID)
 % function trial = objectCoCoMRI(subID, sessID, runID)
-% fMRI experiment for BrainImageNet test dataset
+% fMRI experiment for COCO stimuli in natural vision project
 % subID, subjet ID, integer[1-20]
 % runID, run ID, integer [1-10]
 % workdir(or codeDir) -> sitmulus/instruciton/data 
@@ -116,9 +116,9 @@ while true
 end
 
 %% Make design
-% [onset,cond,trueAnswer, key, rt].
+% [onset,cond,trueAnswer,key,rt,dur].
 nTrial = 150;
-trial = zeros(nTrial, 5);
+trial = zeros(nTrial, 6);
 
 % Randomize condition: 1-120 images
 cond = 1:nTrial;% total trials
@@ -196,7 +196,7 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
     Screen('DrawingFinished',wptr);
     tFix = Screen('Flip', wptr);
-    trial(t, 3) = tFix - tStim; % stimulus duration
+    trial(t, 6) = tFix - tStim; % stimulus duration
 
     % If subject have ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
@@ -280,10 +280,10 @@ save(resultFile);
 
 
 % Print info
-fprintf('BIN CoCo fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+fprintf('CoCo fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
 if Test == 1
-    fprintf('Testing BIN CoCo fMRI ---- DONE!\n')
+    fprintf('CoCo fMRI ---- DONE!\n')
 end
 
 
