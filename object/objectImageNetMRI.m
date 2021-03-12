@@ -20,7 +20,6 @@ end
 if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 nRun = 10;
 
-
 %% Data dir
 % Make work dir
 workDir = pwd;
