@@ -112,9 +112,10 @@ runStim = stimulus(:,runID); % 200 x 5 cell array
 runClass = classID(:,runID); % 200 x 5 cell array
 
 % Collect trial info for this run
+% [class, onset, dur, soa, key, rt]
 nStim = length(runStim);
 nTrial = nStim;
-trial = zeros(nTrial, 6); % [class, onset, dur, isi, key, rt]
+trial = zeros(nTrial, 6); % [class, onset, dur, soa, key, rt]
 trial(:,1) = classID(:,runID);  
 soa = 1.2 + 0.3 * rand(nTrial,1); % soa, [1.2,1.5] 
 trial(:,4) = soa; 
@@ -208,12 +209,14 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
     Screen('DrawingFinished',wptr);
+    Screen('Close',stimTexture);
     tStim = Screen('Flip',wptr);
     % Mark onset of the stimulus
     io64(ioObj,address,stimMark);
     while GetSecs - tStim < markDur, end
     io64(ioObj,address,0);
-    
+    trial(t, 2) = tStim - tStart; % stimulus onset
+
     
     % If subject responds in stimulus presenting, we record it
     key = 0; rt = 0;
