@@ -15,25 +15,20 @@ nRun = 10;
 if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
 
 %% Data dir
-% Make work dir
+% Make work dir for MEG COCO
 workDir = pwd;
-
 % Make data dir
 dataDir = fullfile(workDir,'data');
 if ~exist(dataDir,'dir'), mkdir(dataDir), end
-
-% Make fmri dir
+% Make meg dir
 mriDir = fullfile(dataDir,'meg');
 if ~exist(mriDir,'dir'), mkdir(mriDir), end
-
-% Make test dir for the subject
+% Make coco dir for the subject
 testDir = fullfile(mriDir,'coco');
 if ~exist(testDir,'dir'), mkdir(testDir),end
-
 % Make subject dir
 subDir = fullfile(testDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
-
 % Make session dir
 sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
@@ -43,21 +38,32 @@ Screen('Preference', 'SkipSyncTests', 1);
 if runID > 1
     Screen('Preference','VisualDebugLevel',3);
 end
-% Screen('Preference','VisualDebugLevel',4);
-% Screen('Preference','SuppressAllWarnings',1);
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
 [xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
 HideCursor;
 
-%% Response keys setting
+%% IO setting
+ioObj = io64;
+status = io64(ioObj);
+address = hex2dec('D020');
+if status,error('The driver installation process was successful'); end
+startMark = 1; endMark = 8; % Mark for begin and end of the recording
+stimMark = 2; respMark = 4; % Mark for stimulus onset and response timing
+markDur = 0.005;
+
+%% keys setting
 % PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
 KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
-cueKey1 = KbName('1!'); % Left hand:1!
-cueKey2 = KbName('2@'); % Left hand:2@
+% Left hand for animate and right hand for inanimate
+animateKey1 = KbName('1!'); % Left hand:1!
+animateKey2 = KbName('2@'); % Left hand:2@
+inanimateKey1 = KbName('3#'); % Right hand: 3#
+inanimateKey2 = KbName('4$'); % Right hand: 4$
+
 
 %% Load stimulus and instruction
 imgAngle = 16;
@@ -176,10 +182,11 @@ for t = 1:nTrial
             io64(ioObj,address,respMark);
             while GetSecs - tKey < markDur, end
             io64(ioObj,address,0);
-            
             if keyCode(escKey),sca; return;
-            elseif keyCode(cueKey1) || keyCode(cueKey2)
+            elseif keyCode(animateKey1) || keyCode(animateKey2)
                 key = 1; rt = tKey - tStim;
+            elseif keyCode(inanimateKey1)|| keyCode(inanimateKey2)
+                key = -1; rt = tKey - tStim;
             end
         end
     end
@@ -195,22 +202,23 @@ for t = 1:nTrial
     % If subject have ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
     if rt
-        while GetSecs - tStart < soa(t)
+        while GetSecs - tStim < soa(t)
             [keyIsDown, ~, keyCode] = KbCheck();
             if keyIsDown && keyCode(escKey), sca; return; end
         end
     else
-        while GetSecs - tStart < soa(t)
+        while GetSecs - tStim < soa(t)
             [keyIsDown, tKey, keyCode] = KbCheck();
             if keyIsDown
                 % Mark the rsponese
                 io64(ioObj,address,respMark);
                 while GetSecs - tKey < markDur, end
                 io64(ioObj,address,0);
-                
                 if keyCode(escKey),sca; return;
-                elseif keyCode(cueKey1) || keyCode(cueKey2)
+                elseif keyCode(animateKey1) || keyCode(animateKey2)
                     key = 1; rt = tKey - tStim;
+                elseif keyCode(inanimateKey1)|| keyCode(inanimateKey2)
+                    key = -1; rt = tKey - tStim;
                 end
             end
         end
@@ -218,12 +226,11 @@ for t = 1:nTrial
     trial(t, 5:6) = [key, rt];
 end
 
-% Mark ending of exp 
+% Mark ending of exp
 tEnd = GetSecs;
 io64(ioObj,address,endMark);
 while GetSecs - tEnd < markDur, end
 io64(ioObj,address,0);
-
 
 % Show end instruction
 endTexture = Screen('MakeTexture', wptr, imgEnd);
@@ -253,7 +260,7 @@ response = zeros(nTrial,2);
 response(:,1) = trial(:,5) == 1;
 response(:,2) = trial(:,5) == -1;
 
-% Summarize the response with figure 
+% Summarize the response with figure
 responseEvaluation(target, response,{'Animate', 'Inanimate'});
 
 % Save figure
@@ -276,7 +283,7 @@ if exist(resultFile,'file')
     else, n = str2double(oldFile(end).name(end-4)) + 1;
     end
     
-    % Backup the file from last test 
+    % Backup the file from last test
     newOldFile = fullfile(sessDir,...
         sprintf('sub%02d_sess%02d_run%02d-%d.mat',subID,sessID,runID,n));
     copyfile(resultFile,newOldFile);
@@ -297,7 +304,7 @@ function responseEvaluation(target,response,condName)
 idx = any(response,2);% only keep trial with response
 [cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
 figure('Units','normalized','Position',[0 0 0.5 0.5])
-% subplot(1,2,1), 
+% subplot(1,2,1),
 imagesc(cMat);
 title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));
 axis square
