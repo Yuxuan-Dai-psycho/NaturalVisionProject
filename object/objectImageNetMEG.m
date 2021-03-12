@@ -91,7 +91,7 @@ if ~exist(designFile,'file')
     if subID <= 10
         sess = 4*(subID-1)+ sessID;
     else
-        sess = 40 + 2*(subID-11)+sessID;
+        sess = 40 + 2*(subID-11) + sessID;
     end
     
     % For each session, we have 5 runs, 200 images/run
@@ -200,7 +200,7 @@ WaitSecs(beginDur);
 
 % Show stimulus
 % sti(0.5) --> fix( 0.7-1.0) --> next trial
-% tStart = GetSecs;
+tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
     stimTexture = Screen('MakeTexture', wptr, img{t});
@@ -216,7 +216,6 @@ for t = 1:nTrial
     while GetSecs - tStim < markDur, end
     io64(ioObj,address,0);
     trial(t, 2) = tStim - tStart; % stimulus onset
-
     
     % If subject responds in stimulus presenting, we record it
     key = 0; rt = 0;
@@ -244,7 +243,6 @@ for t = 1:nTrial
     tFix = Screen('Flip', wptr);
     trial(t, 3) = tFix - tStim; % stimulus duration
 
-    
     % If subject has ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
     if rt
@@ -344,7 +342,6 @@ fprintf('MEG ImageNet:sub%d-sess%d-run%d ---- DONE!\n',...
 function responseEvaluation(target,response,condName)
 % responseEvaluation(target,response,condName)
 % target, response,rt,condName
-
 idx = any(response,2);% only keep trial with response
 [cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
 figure('Units','normalized','Position',[0 0 0.5 0.5])
