@@ -1,46 +1,37 @@
-function trial = objectImageNetMEG(subID,sessID,runID)
-% function [subject,task] = objectImageNetMEG(subID,sessID,runID)
-% ImageNet MEG experiment stimulus procedure
-% subjects perform animate vs. inanimate discrimination task
-% subID, subjet ID, integer[1-30]
-% sessID, session ID, integer [1-4]
-% runID, run ID, integer [1-5]
-% workDir(or codeDir) -> sitmulus/instruciton/data 
-% ImageNet MEG has two rounds of exp. 
-% Two sessions  will be conducted in each round.
+function trial = objectCoCoMEG(subID, sessID, runID)
+% function trial = objectCoCoMRI(subID, sessID, runID)
+% fMRI experiment for BrainImageNet test dataset
+% subID, subjet ID, integer[1-20]
+% runID, run ID, integer [1-10]
+% workdir(or codeDir) -> sitmulus/instruciton/data
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
+if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
 % Check session id
-if subID <= 10
-    if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
-else
-    if ~ismember(sessID, 1:2), error('sessID can only be [1:2] for SubID 11-30!');end
-end
+if ~ismember(sessID, 1:1), error('sessID is a integer within [1:1]!');end
 % Check run id
-if ~ismember(runID, 1:5), error('runID is a integer within [1:5]!'); end
-nRun = 5;
+nRun = 10;
+if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
 
 %% Data dir
-% Check workDir for MEG test 
+% Make work dir
 workDir = pwd;
-fprintf('MEG ImageNet workDir is:\n%s\n',workDir)
 
 % Make data dir
 dataDir = fullfile(workDir,'data');
 if ~exist(dataDir,'dir'), mkdir(dataDir), end
 
-% Make meg dir
+% Make fmri dir
 mriDir = fullfile(dataDir,'meg');
 if ~exist(mriDir,'dir'), mkdir(mriDir), end
 
-% Make ImageNet dir
-trainDir = fullfile(mriDir,'imagenet');
-if ~exist(trainDir,'dir'), mkdir(trainDir),end
+% Make test dir for the subject
+testDir = fullfile(mriDir,'coco');
+if ~exist(testDir,'dir'), mkdir(testDir),end
 
 % Make subject dir
-subDir = fullfile(trainDir,sprintf('sub%02d', subID));
+subDir = fullfile(testDir,sprintf('sub%02d', subID));
 if ~exist(subDir,'dir'), mkdir(subDir),end
 
 % Make session dir
@@ -54,77 +45,27 @@ if runID > 1
 end
 % Screen('Preference','VisualDebugLevel',4);
 % Screen('Preference','SuppressAllWarnings',1);
-bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
+bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
 [xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
 HideCursor;
 
-%% IO setting
-ioObj = io64;
-status = io64(ioObj);
-address = hex2dec('D020');
-if status,error('The driver installation process was successful'); end 
-startMark = 1; endMark = 8; % Mark for begin and end of the recording
-stimMark = 2; respMark = 4; % Mark for stimulus onset and response timing
-markDur = 0.005;
-
-
-%% Key setting
-KbName('UnifyKeyNames'); 
+%% Response keys setting
+% PsychDefaultSetup(2);% Setup PTB to 'featureLevel' of 2
+KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
-% Left hand for animate and right hand for inanimate
-animateKey1 = KbName('1!'); % Left hand:1!
-animateKey2 = KbName('2@'); % Left hand:2@
-inanimateKey1 = KbName('3#'); % Right hand: 3#
-inanimateKey2 = KbName('4$'); % Right hand: 4$
-
-
-%% Make design for this session
-% Set design dir
-designDir = fullfile(workDir,'stimulus','imagenet','designMatrix');
-designFile = fullfile(sessDir,...
-    sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
-if ~exist(designFile,'file')
-    load(fullfile(designDir,'BIN.mat'),'BIN');
-    if subID <= 10
-        sess = 4*(subID-1)+ sessID;
-    else
-        sess = 40 + 2*(subID-11)+sessID;
-    end
-    
-    % For each session, we have 5 runs, 200 images/run
-    classID = randperm(1:1000);
-    stimulus= reshape(BIN.stimulus(classID,sess),[200,nRun]);
-    className = reshape(BIN.classID(classID), [200,nRun]);
-    superClassName = reshape(BIN.superClassName(classID), [200,nRun]);
-    superClassID  = reshape(BIN.superClassID(classID), [200,nRun]);
-    save(designFile,'stimulus','classID','className',...
-        'superClassID','superClassName');
-end
-
-% Load session design
-load(designFile,'stimulus','classID');
-
-% Image for this run
-runStim = stimulus(:,runID); % 200 x 5 cell array 
-runClass = classID(:,runID); % 200 x 5 cell array
-
-% Collect trial info for this run
-% [class, onset, dur, soa, key, rt]
-nStim = length(runStim);
-nTrial = nStim;
-trial = zeros(nTrial, 6); % [class, onset, dur, soa, key, rt]
-trial(:,1) = classID(:,runID);  
-soa = 1.2 + 0.3 * rand(nTrial,1); % soa, [1.2,1.5] 
-trial(:,4) = soa; 
+cueKey1 = KbName('1!'); % Left hand:1!
+cueKey2 = KbName('2@'); % Left hand:2@
 
 %% Load stimulus and instruction
-% Visule angle for stimlus and fixation
 imgAngle = 16;
-fixOuterAngle = 0.2;
-fixInnerAngle = 0.1;
+fixOuterAngle = 0.2;% 0.3
+fixInnerAngle = 0.1;% 0.2
+fixOuterColor = [0 0 0]; % color of fixation circular ring
+whiteFixation = [255 255 255]; % color of fixation circular point
+redFixation = [255 0 0]; % color of fixation circular point
 
 % Visual angle to pixel
 pixelPerMilimeterHor = 1024/390;
@@ -134,35 +75,33 @@ imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
 fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
 fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 
-% Load stimuli
-stimDir = fullfile(workDir,'stimulus','imagenet','images');
+% Load stimulus
+stimDir = fullfile(workDir,'stimulus','coco','images');
+imgName = extractfield(dir(stimDir), 'name');
+imgName = imgName(3:end);
+nStim = length(imgName);
 img = cell(nStim,1);
 for t = 1:nStim
-    imgFile = fullfile(stimDir, runClass{t}, runStim{t});
-    img{t} = imresize(imread(imgFile), [imgPixelHor imgPixelVer]);
+    img{t}  = imresize(imread(fullfile(stimDir, imgName{t})), [imgPixelHor imgPixelVer]);
 end
 
-% Load  instruction
-imgStart = imread(fullfile(workDir, 'instruction', 'trainStart.JPG'));
-imgEnd = imread(fullfile(workDir, 'instruction', 'trainEnd.JPG'));
+% Load instruction image
+imgStart = imread(fullfile(workDir, 'instruction', 'testStart.JPG'));
+imgEnd = imread(fullfile(workDir, 'instruction', 'testEnd.JPG'));
 
 %% Show instruction
 startTexture = Screen('MakeTexture', wptr, imgStart);
-Screen('PreloadTextures',wptr,startTexture);
 Screen('DrawTexture', wptr, startTexture);
-Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
+Screen('Close',startTexture);
 
 % Wait ready signal from subject
 while KbCheck(); end
 while true
     [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && (keyCode(animateKey1) || keyCode(animateKey2)), break;
-    end
+    if keyIsDown && (keyCode(cueKey1) || keyCode(cueKey2)), break;  end
 end
-readyDotColor = [255 0 0];
-Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
-Screen('DrawingFinished',wptr);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, redFixation, [], 2);
 Screen('Flip', wptr);
 
 fprintf(['*** Please ask MEG console to turn on MEG.\n' ...
@@ -173,7 +112,7 @@ while KbCheck(); end
 while true
     [keyIsDown,tKey,keyCode] = KbCheck();
     if keyIsDown && keyCode(startKey)
-        % Mark begining of exp 
+        % Mark begining of exp
         io64(ioObj,address,startMark);
         while GetSecs - tKey < markDur; end
         io64(ioObj,address,0);
@@ -183,31 +122,41 @@ while true
     end
 end
 
+%% Make design
+% [img, onset, dur, isi, key, rt]
+nTrial = 240;
+trial = zeros(nTrial, 6); % [imgid, onset, dur, soa, key, rt]
+
+% Each of 120 images will be repeated twice
+imgid = [1:120, 1:120];%  image imgid
+while true
+    imgid = imgid(randperm(length(imgid)));
+    if all(diff(imgid)),break; end
+end
+trial(:,1) = imgid;
+soa = 1.2 + 0.3 * rand(nTrial,1); % soa, [1.2,1.5]
+trial(:,4) = soa;
+
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
-onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
+onDur = 0.5 - 0.5*flipInterval; % on duration for a stimulus
 beginDur = 1; % beigining fixation duration
 endDur = 1; % ending fixation duration
-fixOuterColor = [0 0 0]; % color of fixation circular ring
-fixInnerColor = [255 255 255]; % color of fixation circular point
 
 % Show begining fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
-Screen('DrawingFinished',wptr);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
 
 % Show stimulus
 % sti(0.5) --> fix( 0.7-1.0) --> next trial
-% tStart = GetSecs;
+tStart = GetSecs;
 for t = 1:nTrial
-    % Show stimulus with fixation
-    stimTexture = Screen('MakeTexture', wptr, img{t});
-    Screen('PreloadTextures',wptr,stimTexture);
+    stimTexture = Screen('MakeTexture', wptr, img{trial(t,1)});
     Screen('DrawTexture', wptr, stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation ,[], 2);
     Screen('DrawingFinished',wptr);
     Screen('Close',stimTexture);
     tStim = Screen('Flip',wptr);
@@ -216,9 +165,8 @@ for t = 1:nTrial
     while GetSecs - tStim < markDur, end
     io64(ioObj,address,0);
     trial(t, 2) = tStim - tStart; % stimulus onset
-
     
-    % If subject responds in stimulus presenting, we record it
+    % If subject respond in stimulus presenting, we record it
     key = 0; rt = 0;
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStim < onDur
@@ -228,48 +176,46 @@ for t = 1:nTrial
             io64(ioObj,address,respMark);
             while GetSecs - tKey < markDur, end
             io64(ioObj,address,0);
+            
             if keyCode(escKey),sca; return;
-            elseif keyCode(animateKey1) || keyCode(animateKey2)
+            elseif keyCode(cueKey1) || keyCode(cueKey2)
                 key = 1; rt = tKey - tStim;
-            elseif keyCode(inanimateKey1)|| keyCode(inanimateKey2)
-                key = -1; rt = tKey - tStim;
             end
         end
     end
-  
-    % Show fixation
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
-    Screen('DrawingFinished',wptr);
-    tFix = Screen('Flip', wptr);
-    trial(t, 3) = tFix - tStim; % stimulus duration
-
     
-    % If subject has ready responded in stimtulus presenting, we'll not
+    % Show after stimulus fixation
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+    Screen('DrawingFinished',wptr);
+    tFix = Screen('Flip',wptr);
+    trial(t, 3) = tFix - tStim; % stimulus duration
+    
+    
+    % If subject have ready responded in stimtulus presenting, we'll not
     % record it in fixation period; if not, we record it.
     if rt
-        while GetSecs - tStim < soa(t)
+        while GetSecs - tStart < soa(t)
             [keyIsDown, ~, keyCode] = KbCheck();
             if keyIsDown && keyCode(escKey), sca; return; end
         end
     else
-        while GetSecs - tStim < soa(t)
+        while GetSecs - tStart < soa(t)
             [keyIsDown, tKey, keyCode] = KbCheck();
             if keyIsDown
-                % Mark the response
+                % Mark the rsponese
                 io64(ioObj,address,respMark);
                 while GetSecs - tKey < markDur, end
                 io64(ioObj,address,0);
+                
                 if keyCode(escKey),sca; return;
-                elseif keyCode(animateKey1) || keyCode(animateKey2)
+                elseif keyCode(cueKey1) || keyCode(cueKey2)
                     key = 1; rt = tKey - tStim;
-                elseif keyCode(inanimateKey1)|| keyCode(inanimateKey2)
-                    key = -1; rt = tKey - tStim;
                 end
             end
         end
     end
-    trial(t, 5:6) = [key,rt];
+    trial(t, 5:6) = [key, rt];
 end
 
 % Mark ending of exp 
@@ -278,21 +224,24 @@ io64(ioObj,address,endMark);
 while GetSecs - tEnd < markDur, end
 io64(ioObj,address,0);
 
+
 % Show end instruction
 endTexture = Screen('MakeTexture', wptr, imgEnd);
 Screen('PreloadTextures',wptr,endTexture);
 Screen('DrawTexture', wptr, endTexture);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
-WaitSecs(endDur)
+Screen('Close',endTexture);
+WaitSecs(endDur);
 
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
 
+
 %% Evaluate the response
-load(fullfile(designDir,'animate_or_not.mat'),'animate_label');
-% trial, nTial * 6 array;  % [class, onset, dur, isi, key, RT]
+load(fullfile(designDir,'coco_animate_or_not.mat'),'animate_label');
+% trial, nTial * 6 array;  % [class, onset, dur, soa, key, RT]
 % Make target matrix nTrial x nCond
 target = zeros(nTrial,2);
 animate_label = animate_label(trial(:,1));
@@ -338,7 +287,7 @@ fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
 % Print sucess info
-fprintf('MEG ImageNet:sub%d-sess%d-run%d ---- DONE!\n',...
+fprintf('MEG COCO:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
 
 function responseEvaluation(target,response,condName)
@@ -367,6 +316,14 @@ text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
 % legend({'Miss','False alarm','Hit','Correct reject'},...
 %    'Orientation','vertical' ,'Location','northeastoutside' )
 % legend boxoff
+
+
+
+
+
+
+
+
 
 
 
