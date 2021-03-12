@@ -2,19 +2,24 @@ function trial = objectImageNetMRI(subID,sessID,runID)
 % function [subject,task] = objectImageNetMRI(subID,sessID,runID)
 % Brain ImageNet fMRI experiment stimulus procedure
 % subject do animate vs. inanimate discrimination task
-% subID, subjet ID, integer[1-20]
+% subID, subjet ID, integer[1-50]
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-10]
 % workdir(or codeDir) -> sitmulus/instruciton/data 
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, [1:20,10086]), error('subID is a integer within [1:20]!'); end
+if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
 % Check session id
-if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
+if subID <= 10
+    if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
+else
+    if ~ismember(sessID, 1), error('sessID can only be [1] for SubID 11-50!');end
+end
 % Check run id
 if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
 nRun = 10;
+
 
 %% Data dir
 % Make work dir
