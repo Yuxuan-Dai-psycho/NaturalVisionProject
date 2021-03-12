@@ -167,12 +167,12 @@ Screen('Flip', wptr);
 fprintf(['*** Please ask MEG console to turn on MEG.\n' ...
     '*** Afte MEG has been turn on, press S key to begin the exp.\n'])
 
-% Set trigger(S key) to begin MEG recording
+% Set trigger(S key) to begin the experiment
 while KbCheck(); end
 while true
     [keyIsDown,tKey,keyCode] = KbCheck();
     if keyIsDown && keyCode(startKey)
-        % Mark
+        % Mark begining of exp 
         io64(ioObj,address,startMark);
         while GetSecs - tKey < markDur; end
         io64(ioObj,address,0);
@@ -209,6 +209,7 @@ for t = 1:nTrial
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
     Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
+    % Mark onset of the stimulus
     io64(ioObj,address,stimMark);
     while GetSecs - tStim < markDur, end
     io64(ioObj,address,0);
@@ -220,6 +221,7 @@ for t = 1:nTrial
     while GetSecs - tStim < onDur
         [keyIsDown, tKey, keyCode] = KbCheck();
         if keyIsDown
+            % Mark the rsponese
             io64(ioObj,address,respMark);
             while GetSecs - tKey < markDur, end
             io64(ioObj,address,0);
@@ -251,6 +253,7 @@ for t = 1:nTrial
         while GetSecs - tStim < soa(t)
             [keyIsDown, tKey, keyCode] = KbCheck();
             if keyIsDown
+                % Mark the response
                 io64(ioObj,address,respMark);
                 while GetSecs - tKey < markDur, end
                 io64(ioObj,address,0);
@@ -259,14 +262,14 @@ for t = 1:nTrial
                     key = 1; rt = tKey - tStim;
                 elseif keyCode(inanimateKey1)|| keyCode(inanimateKey2)
                     key = -1; rt = tKey - tStim;
-                end                
+                end
             end
         end
     end
     trial(t, 5:6) = [key,rt];
 end
 
-% End of the test
+% Mark ending of exp 
 tEnd = GetSecs;
 io64(ioObj,address,endMark);
 while GetSecs - tEnd < markDur, end
