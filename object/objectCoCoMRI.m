@@ -278,15 +278,12 @@ end
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 
-
 % Print info
 fprintf('CoCo fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
 if Test == 1
     fprintf('CoCo fMRI ---- DONE!\n')
 end
-
-
 
 function responseEvaluation(target,response,condName)
 % responseEvaluation(target,response,condName)
