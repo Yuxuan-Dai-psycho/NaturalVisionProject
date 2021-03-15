@@ -1,12 +1,23 @@
-% The script generates design matrix for BrainImageNet train set
+% The script generates design matrix for ImageNet stimuli
 % Organize both stimulus image and stimulus order information into
 % BrainImageNet(BIN) structure
+%%----------------------------WARNING-------------------------------%%
+% The script is to generate design matrix for all subsequent exp£¬ 
+% So after a design marix(BIN) has been generated and begin to run exp, 
+% you are forbidden to rerun the code to overwrite the alreay used
+% BIN file.
+%%------------------------------------------------------------------%%
 
 clc;clear;
 %% Directory setting
-stimDir =  'D:\fMRI\BrainImageNet\stim';
+stimDir =  'D:\ImageNet\stim'; % 
 imgDir = fullfile(stimDir,'images');
 designDir = fullfile(stimDir,'designMatrix');
+if ~exist(fullfile(designDir,'BIN.mat'), 'file')
+    error(['The script is to generate design matrix for all subsequent exp.',...
+        'So after a design marix(BIN) has been generated and begin to run exp, ',...
+        'you should not rerun the code to overwrite the BIN file.']);
+end
 
 %% Load super class  
 % read super class info
