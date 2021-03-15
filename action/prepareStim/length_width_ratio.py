@@ -19,13 +19,25 @@ def get_frame_length_width_ratio(video_path):
     vid_cap = cv2.VideoCapture(video_path)
     frame_height = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     frame_width  = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    vid_cap.set(cv2.CAP_PROP_POS_FRAMES, 1) # get the first frame as example
-    _, frame = vid_cap.read()
-    # Compute size of black border if exists
-    thresh = 10 # Threshold of pixel value to crop
-    y_nonzero, x_nonzero, _ = np.nonzero(frame>thresh)
-    crop_height = np.max(y_nonzero) - np.min(y_nonzero) + 1
-    crop_width  = np.max(x_nonzero) - np.min(x_nonzero) + 1
+    frame_num = int(vid_cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    # loop to get valid frame
+    for frame_idx in range(frame_num):
+        # Using try to handle situation when the frame is all black
+        try:
+            vid_cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx) 
+            _, frame = vid_cap.read()
+            # Compute size of black border if exists
+            thresh = 10 # Threshold of pixel value to crop
+            y_nonzero, x_nonzero, _ = np.nonzero(frame>thresh)
+            # compute crop height and width
+            crop_height = np.max(y_nonzero) - np.min(y_nonzero) + 1
+            crop_width  = np.max(x_nonzero) - np.min(x_nonzero) + 1
+        # if error appears, then continue to the next loop, else break the whole loop
+        except Exception:
+            continue
+        else:
+            print(f'Sucessfully compute ratio in frame {frame_idx+1}!')
+            break
     # compute ratio
     frame_ratio = round(frame_width/frame_height, 2)
     crop_ratio = round(crop_width/crop_height, 2)
@@ -70,7 +82,26 @@ for row in qualified.index.values.tolist():
     
 qualified.to_csv(f'{working_path}/dataset.csv', index=False)
 
-    
+#%% handle invalid video
+# prepare dataset and fail txt
+dataset = pd.read_csv(f'{working_path}/dataset.csv')
+with open(f'{working_path}/frame_ratio.txt') as f:
+    lines = f.readlines()
+f.close()
+# prepare class name and video name
+video_invalid = [x[x.index('v_'):x.index('.mp4')] + '.mp4' for x in lines]
+video_class = [x.split('_')[1] for x in video_invalid]
+# loop to re compute ratio
+for idx,video_name in enumerate(video_invalid):
+    class_name = video_class[idx]
+    video_path = '/'.join([dataset_path, class_name, video_name])
+    # compute ratio
+    frame_ratio, crop_ratio = get_frame_length_width_ratio(video_path)
+    dataset.loc[dataset['video']==video_name, ['frame_ratio', 'crop_ratio']] = [frame_ratio, crop_ratio]
+    print('Video %s: frame ratio %.2f; crop ratio: %.2f'%(video_name, frame_ratio, crop_ratio))
+
+dataset.to_csv(f'{working_path}/dataset.csv', index=False)
+
 #%% filter data
 data = pd.read_csv(f'{working_path}/dataset.csv')
 
