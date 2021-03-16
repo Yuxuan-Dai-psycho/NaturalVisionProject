@@ -1,13 +1,9 @@
-%%======！！！！请务必不要搞错subID 和 sessID ！！！=====
-clear; 
-close all
-
-% Please run each exp under the home directory of
-% NaturalVisionProject
+%% Please run exp under the home dir of NaturalVisionProject
+clear; close all
 workDir = pwd;
 addpath(genpath(workDir));
 
-%% Set subject and session info
+%% Set subject and session info: 请务必不要搞错subID 和 sessID  
 % You should manually input subject ID and session ID
 subName = 'Test';subID = 10086; sessID = 1; 
 
@@ -27,10 +23,9 @@ close all;sca;
 CoCoMemory(subID,sessID);
 
 %% Run CoCo MEG 
+% % You should mannual change runID for each run
 % For 10 core subjects, there is one session of COCO MEG. 
 % For other 20 subjects, no COCO MEG
-
-% You should mannual change runID for each run
 close all;sca;
 CoCoMEG(subID,sessID,1);
 

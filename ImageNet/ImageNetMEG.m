@@ -11,7 +11,7 @@ function trial = ImageNetMEG(subID,sessID,runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:50), error('subID is a integer within [1:30]!'); end
+if ~ismember(subID, 1:30), error('subID is a integer within [1:30]!'); end
 % Check session id
 if subID <= 10
     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
