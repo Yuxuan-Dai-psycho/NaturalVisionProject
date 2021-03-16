@@ -140,7 +140,8 @@ while true
     if all(diff(imgid)),break; end
 end
 trial(:,1) = imgid;
-soa = 1.2 + 0.3 * rand(nTrial,1); % soa, [1.2,1.5]
+jit = [1.8, 2.2]; % random trial length 
+soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); % soa, [1.8,2.2] 
 trial(:,4) = soa;
 
 %% Run experiment

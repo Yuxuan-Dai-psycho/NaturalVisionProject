@@ -11,7 +11,7 @@ function trial = ImageNetMEG(subID,sessID,runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
+if ~ismember(subID, 1:50), error('subID is a integer within [1:30]!'); end
 % Check session id
 if subID <= 10
     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
@@ -116,8 +116,9 @@ runClass = classID(:,runID); % 200 x 5 cell array
 nStim = length(runStim);
 nTrial = nStim;
 trial = zeros(nTrial, 6); % [class, onset, dur, soa, key, rt]
-trial(:,1) = classID(:,runID);  
-soa = 1.2 + 0.3 * rand(nTrial,1); % soa, [1.2,1.5] 
+trial(:,1) = classID(:,runID); 
+jit = [1.8, 2.2]; % random trial length 
+soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); % soa, [1.8,2.2] 
 trial(:,4) = soa; 
 
 %% Load stimulus and instruction

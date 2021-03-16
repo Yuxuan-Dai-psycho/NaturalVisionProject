@@ -45,8 +45,6 @@ Screen('Preference', 'SkipSyncTests', 1);
 if runID > 1
   Screen('Preference','VisualDebugLevel',3);  
 end
-% Screen('Preference','VisualDebugLevel',4);
-% Screen('Preference','SuppressAllWarnings',1);
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
