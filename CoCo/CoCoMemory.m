@@ -1,5 +1,5 @@
-function trial = objectCoCoMemory(subID,sessID,sRun)
-% function trial = objectCoCoMemory(subID,sessID,sRun)
+function trial = CoCoMemory(subID,sessID,sRun)
+% function trial = CoCoMemory(subID,sessID,sRun)
 % Memory test after BrianImageNet fMRI train experiment
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]
@@ -190,10 +190,10 @@ end
 fprintf('Data were saved to: %s\n',resultFile);
 save(resultFile);
 % Print sucess info
-fprintf('BIN CoCo Memory:sub%d-sess%d-run%d ---- DONE!\n',...
+fprintf('CoCo Memory:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
 if Test == 1
-    fprintf('Testing BIN CoCo Memory')
+    fprintf('Testing CoCo Memory')
 end
 % Show cursor and close all
 ShowCursor;
