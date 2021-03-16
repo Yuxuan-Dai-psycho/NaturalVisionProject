@@ -1,7 +1,11 @@
 %%======！！！！请务必不要搞错subID 和 sessID ！！！=====
 clear; 
 close all
+
+% Please run each exp under the home directory of
+% NaturalVisionProject
 workDir = pwd;
+addpath(genpath(workDir));
 
 %% Set subject and session info
 % You should manually input subject ID and session ID
