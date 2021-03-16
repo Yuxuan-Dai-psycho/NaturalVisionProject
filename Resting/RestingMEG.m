@@ -39,7 +39,7 @@ cueKey2 = KbName('2@');
 ioObj = io64;
 status = io64(ioObj);
 address = hex2dec('D020');
-if status,error('The driver installation process was successful'); end 
+if status,error('The driver installation process was not successful'); end 
 startMark = 1; endMark = 8; % Mark for begin and end of the recording
 % stimMark = 2; respMark = 4; % Mark for stimulus onset and response timing
 markDur = 0.005;

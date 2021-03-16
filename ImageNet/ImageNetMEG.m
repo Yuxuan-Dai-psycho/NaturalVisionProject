@@ -64,11 +64,10 @@ HideCursor;
 ioObj = io64;
 status = io64(ioObj);
 address = hex2dec('D020');
-if status,error('The driver installation process was successful'); end 
+if status,error('The driver installation process was not successful'); end 
 startMark = 1; endMark = 8; % Mark for begin and end of the recording
 stimMark = 2; respMark = 4; % Mark for stimulus onset and response timing
 markDur = 0.005;
-
 
 %% Key setting
 KbName('UnifyKeyNames'); 
@@ -79,7 +78,6 @@ animateKey1 = KbName('1!'); % Left hand:1!
 animateKey2 = KbName('2@'); % Left hand:2@
 inanimateKey1 = KbName('3#'); % Right hand: 3#
 inanimateKey2 = KbName('4$'); % Right hand: 4$
-
 
 %% Make design for this session
 % Set design dir
