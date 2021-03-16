@@ -64,7 +64,6 @@ animateKey2 = KbName('2@'); % Left hand:2@
 inanimateKey1 = KbName('3#'); % Right hand: 3#
 inanimateKey2 = KbName('4$'); % Right hand: 4$
 
-
 %% Load stimulus and instruction
 imgAngle = 16;
 fixOuterAngle = 0.2;% 0.3
@@ -245,7 +244,6 @@ WaitSecs(endDur);
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
-
 
 %% Evaluate the response
 load(fullfile(designDir,'coco_animate_or_not.mat'),'animate_label');
