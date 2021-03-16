@@ -15,7 +15,7 @@ CoCoMRI(subID,sessID,1);
 %% Run Resting fMRI  
 % You should mannual change runID for each run
 close all;sca;
-CoCoRestingMRI(subID,sessID);
+RestingMRI(subID,sessID);
 
 %% Run CoCo memroy  
 % You should mannual change runID for each run

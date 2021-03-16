@@ -1,6 +1,6 @@
-function ImageNetRestingMRI(subID, sessID, runID, runDur)
-% function ImageNetRestingMRI(subID, sessID, runID, runDur)
-% fMRI experiment for BrainImageNet test dataset
+function RestingMEG(subID, sessID, runID, runDur)
+% function RestingMRI(subID, sessID, runID, runDur)
+% Resting MEG scan
 % subID, subjet ID, integer[1-20]
 % runID, run ID, integer [1-10]
 % workdir(or codeDir) -> sitmulus/instruciton/data 
@@ -97,7 +97,7 @@ ShowCursor;
 Screen('CloseAll');
 
 % Print  info
-fprintf('BIN Resting fMRI:sub%d-sess%d-run%d ---- DONE!\n',...
+fprintf('Resting MEG:sub%d-sess%d-run%d ---- DONE!\n',...
     subID, sessID,runID)
 
 
