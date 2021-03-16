@@ -92,8 +92,8 @@ imgEnd = imread(fullfile(workDir, 'instruction', 'testEnd.JPG'));
 %% Show instruction
 startTexture = Screen('MakeTexture', wptr, imgStart);
 Screen('DrawTexture', wptr, startTexture);
-Screen('Flip', wptr);
 Screen('Close',startTexture);
+Screen('Flip', wptr);
 
 % Wait ready signal from subject
 while KbCheck(); end
@@ -225,8 +225,8 @@ endTexture = Screen('MakeTexture', wptr, imgEnd);
 Screen('PreloadTextures',wptr,endTexture);
 Screen('DrawTexture', wptr, endTexture);
 Screen('DrawingFinished',wptr);
-Screen('Flip', wptr);
 Screen('Close',endTexture); 
+Screen('Flip', wptr);
 WaitSecs(2);
 
 % Show cursor and close all
@@ -288,7 +288,7 @@ function responseEvaluation(target,response,condName)
 % target, response,rt,condName
 
 idx = any(response,2);% only keep trial with response
-[cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
+[cVal,cMat,~,cPer] = confusion(target(idx,:)',response(idx,:)');
 figure('Units','normalized','Position',[0 0 0.5 0.5])
 % subplot(1,2,1), 
 imagesc(cMat);

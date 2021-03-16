@@ -1,7 +1,7 @@
 function RestingMEG(subID, sessID, runID, runDur)
 % function RestingMRI(subID, sessID, runID, runDur)
 % Resting MEG scan
-% subID, subjet ID, integer[1-20]
+% subID, subjet ID, integer[1-30]
 % runID, run ID, integer [1-10]
 % workdir(or codeDir) -> sitmulus/instruciton/data 
 if nargin < 4, runDur = 480; end
@@ -9,7 +9,7 @@ if nargin < 3, runID = 1; end
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, [1:20 10086]), error('subID is a integer within [1:20]!'); end
+if ~ismember(subID, [1:30 10086]), error('subID is a integer within [1:30]!'); end
 % Check session id
 if ~ismember(sessID, 1:5), error('sessID is a integer within [1:5]!');end
 % Check run id, max 2 runs in a session
@@ -59,8 +59,8 @@ imgEnd = imread(fullfile(workDir, 'instruction', 'restEnd.JPG'));
 %% Show instruction
 startTexture = Screen('MakeTexture', wptr, imgStart);
 Screen('DrawTexture', wptr, startTexture);
-Screen('Flip', wptr);
 Screen('Close',startTexture);
+Screen('Flip', wptr);
 
 % Wait ready signal from subject
 while KbCheck(); end
@@ -72,7 +72,7 @@ redFixation = [255 0 0]; % read fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, redFixation, [], 2);
 Screen('Flip', wptr);
 
-fprintf(['*** Please ask MEG console to turn on MEG.\n' ...
+fprintf(['*** Please ask MEG operator to turn on MEG.\n' ...
     '*** Afte MEG has been turn on, press S key to begin the exp.\n'])
 
 % Set trigger(S key) to begin the experiment
@@ -112,8 +112,8 @@ endTexture = Screen('MakeTexture', wptr, imgEnd);
 Screen('PreloadTextures',wptr,endTexture);
 Screen('DrawTexture', wptr, endTexture);
 Screen('DrawingFinished',wptr);
-Screen('Flip', wptr);
 Screen('Close',endTexture); 
+Screen('Flip', wptr);
 WaitSecs(endDur);
 
 % Show cursor and close all

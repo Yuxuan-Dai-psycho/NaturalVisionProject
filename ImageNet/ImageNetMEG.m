@@ -52,8 +52,6 @@ Screen('Preference', 'SkipSyncTests', 1);
 if runID > 1
     Screen('Preference','VisualDebugLevel',3);
 end
-% Screen('Preference','VisualDebugLevel',4);
-% Screen('Preference','SuppressAllWarnings',1);
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
@@ -164,7 +162,7 @@ Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
 
-fprintf(['*** Please ask MEG console to turn on MEG.\n' ...
+fprintf(['*** Please ask MEG operator to turn on MEG.\n' ...
     '*** Afte MEG has been turn on, press S key to begin the exp.\n'])
 
 % Set trigger(S key) to begin the experiment
