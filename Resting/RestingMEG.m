@@ -18,7 +18,6 @@ if ~ismember(runID, 1:2), error('runID is a integer within [1:2]!'); end
 %% Data dir
 workDir = pwd;
 
-
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
 Screen('Preference','VisualDebugLevel',4);
@@ -35,6 +34,16 @@ startKey = KbName('s');
 escKey = KbName('ESCAPE');
 cueKey1 = KbName('1!');
 cueKey2 = KbName('2@');
+
+%% IO setting
+ioObj = io64;
+status = io64(ioObj);
+address = hex2dec('D020');
+if status,error('The driver installation process was successful'); end 
+startMark = 1; endMark = 8; % Mark for begin and end of the recording
+% stimMark = 2; respMark = 4; % Mark for stimulus onset and response timing
+markDur = 0.005;
+
 %% Load stimulus and instruction
 fixOuterAngle = 0.3;
 fixInnerAngle = 0.2;
@@ -63,12 +72,21 @@ redFixation = [255 0 0]; % read fixation
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, redFixation, [], 2);
 Screen('Flip', wptr);
 
-% Wait trigger(S key) to begin the test
+fprintf(['*** Please ask MEG console to turn on MEG.\n' ...
+    '*** Afte MEG has been turn on, press S key to begin the exp.\n'])
+
+% Set trigger(S key) to begin the experiment
 while KbCheck(); end
 while true
-    [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && keyCode(startKey), break;
-    elseif keyIsDown && keyCode(escKey), sca; return;
+    [keyIsDown,tKey,keyCode] = KbCheck();
+    if keyIsDown && keyCode(startKey)
+        % Mark begining of exp 
+        io64(ioObj,address,startMark);
+        while GetSecs - tKey < markDur; end
+        io64(ioObj,address,0);
+        break;
+    elseif keyIsDown && keyCode(escKey)
+        sca; return;
     end
 end
 
@@ -82,6 +100,12 @@ while GetSecs - tStart < runDur
     [keyIsDown, ~, keyCode] = KbCheck();
     if keyIsDown && keyCode(escKey),sca; return;  end
 end
+
+% Mark ending of exp 
+tEnd = GetSecs;
+io64(ioObj,address,endMark);
+while GetSecs - tEnd < markDur, end
+io64(ioObj,address,0);
 
 % Show end instruction
 endTexture = Screen('MakeTexture', wptr, imgEnd);

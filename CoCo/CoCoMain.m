@@ -30,9 +30,8 @@ CoCoMemory(subID,sessID);
 close all;sca;
 CoCoMEG(subID,sessID,1);
 
-
 %% Run Resting MEG 
 % You should mannual change runID for each run
 close all;sca;
-CoCoRestingMEG(subID,sessID);
+RestingMEG(subID,sessID);
 
