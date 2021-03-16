@@ -1,5 +1,5 @@
-function trial = objectImageNetMEG(subID,sessID,runID)
-% function [subject,task] = objectImageNetMEG(subID,sessID,runID)
+function trial = ImageNetMEG(subID,sessID,runID)
+% function [subject,task] = ImageNetMEG(subID,sessID,runID)
 % ImageNet MEG experiment stimulus procedure
 % subjects perform animate vs. inanimate discrimination task
 % subID, subjet ID, integer[1-30]
@@ -343,7 +343,7 @@ function responseEvaluation(target,response,condName)
 % responseEvaluation(target,response,condName)
 % target, response,rt,condName
 idx = any(response,2);% only keep trial with response
-[cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
+[cVal,cMat,~,cPer] = confusion(target(idx,:)',response(idx,:)');
 figure('Units','normalized','Position',[0 0 0.5 0.5])
 % subplot(1,2,1), 
 imagesc(cMat);

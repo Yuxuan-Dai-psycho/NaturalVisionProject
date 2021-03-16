@@ -1,5 +1,5 @@
-function trial = objectCoCoMRI(subID, sessID, runID)
-% function trial = objectCoCoMRI(subID, sessID, runID)
+function trial = CoCoMRI(subID, sessID, runID)
+% function trial = CoCoMRI(subID, sessID, runID)
 % fMRI experiment for COCO stimuli in natural vision project
 % subID, subjet ID, integer[1-20]
 % runID, run ID, integer [1-10]

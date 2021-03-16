@@ -1,4 +1,4 @@
-function [c,cm,ind,per] = objectConfusion(targets,outputs)
+function [c,cm,ind,per] = confusion(targets,outputs)
 %CONFUSION Classification confusion matrix.
 %
 %  [C,CM,IND,PER] = <a href="matlab:doc confusion">confusion</a>(T,Y) takes an SxQ target and output matrices
