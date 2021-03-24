@@ -1,5 +1,5 @@
-function trial = objectCoCoMEG(subID, sessID, runID)
-% function trial = objectCoCoMRI(subID, sessID, runID)
+function trial = CoCoMEG(subID, sessID, runID)
+% function trial = CoCoMEG(subID, sessID, runID)
 % fMRI experiment for BrainImageNet test dataset
 % subID, subjet ID, integer[1-20]
 % runID, run ID, integer [1-10]
@@ -302,7 +302,7 @@ function responseEvaluation(target,response,condName)
 % target, response,rt,condName
 
 idx = any(response,2);% only keep trial with response
-[cVal,cMat,~,cPer] = objectConfusion(target(idx,:)',response(idx,:)');
+[cVal,cMat,~,cPer] = confusion(target(idx,:)',response(idx,:)');
 figure('Units','normalized','Position',[0 0 0.5 0.5])
 % subplot(1,2,1),
 imagesc(cMat);

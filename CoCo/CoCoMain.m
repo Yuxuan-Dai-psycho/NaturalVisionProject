@@ -7,33 +7,32 @@ workDir = pwd;
 % You should manually input subject ID and session ID
 subName = 'Test';subID = 10086; sessID = 1; 
 
-%% Run BIN ImageNet fMRI exp: 
+%% Run CoCo fMRI  
 % You should mannual change runID for each run
 close all;sca;
-objectImageNetMRI(subID,sessID,1);
+CoCoMRI(subID,sessID,1);
 
-
-%% Run BIN ImageNet memroy exp 
+%% Run Resting fMRI  
 % You should mannual change runID for each run
 close all;sca;
-objectImageNetMemory(subID,sessID);
+CoCoRestingMRI(subID,sessID);
 
-
-%% Run BIN CoCo fMRI exp 
+%% Run CoCo memroy  
 % You should mannual change runID for each run
 close all;sca;
-objectCoCoMRI(subID,sessID,1);
+CoCoMemory(subID,sessID);
 
+%% Run CoCo MEG 
+% For 10 core subjects, there is one session of COCO MEG. 
+% For other 20 subjects, no COCO MEG
 
-%% Run BIN Resting fMRI exp 
 % You should mannual change runID for each run
 close all;sca;
-objectRestingMRI(subID,sessID);
+CoCoMEG(subID,sessID,1);
 
 
-
-
-%% Run BIN CoCo memroy exp 
+%% Run Resting MEG 
 % You should mannual change runID for each run
 close all;sca;
-objectCoCoMemory(subID,sessID);
+CoCoRestingMEG(subID,sessID);
+

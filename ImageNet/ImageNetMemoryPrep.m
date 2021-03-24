@@ -1,35 +1,29 @@
-function trial = objectCoCoMemory(subID,sessID,sRun)
-% function trial = objectCoCoMemory(subID,sessID,sRun)
-% Memory test after BrianImageNet fMRI train experiment
+function ImageNetMemoryPrep(subID,sessID, nTrial)
+% function trial = ImageNetMemoryPrep(subID,sessID)
+% Memory test training after BrianImageNet fMRI train experiment
 % subID, subjet ID, integer[1-20]
 % sessID, session ID, integer [1-4]
-% sRun, run ID to start, integer [1-4]
+% ntrial, trials of preparing behavior, integer[1:1000]
 % workdir(or codeDir) -> sitmulus/instruciton/data
 
-if nargin < 3, sRun = 1; end
-runID = 1;
-%% Check subject information+
+if nargin < 3, nTrial = 20; end
+
+%% Check subject information
 % Check subject id
 if ~ismember(subID, [1:20 10086]), error('subID is a integer within [1:20]!'); end
 % Check session id
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
-% Check start run
-if ~ismember(sRun, 1:4), error('sRun is a integer within [1:4]!');end
+% Check session id
+if ~ismember(sessID, 1:1000), error('sessID is a integer within [1:1000]!');end
 
 %% Data dir
+% All dir should exist before the behavior test
 workDir = pwd;
-trainDir = fullfile(workDir,'data','fmri','test');
-sessDir = fullfile(trainDir,sprintf('sub%02d/sess%02d',subID,sessID));
-if ~exist(sessDir,'dir'), mkdir(sessDir); end
-%% for test checking
-if subID == 10086
-    Test = 1;
-else
-    Test = 0;
-end
+
 %% Screen setting
 Screen('Preference', 'SkipSyncTests', 1);
-Screen('Preference','VisualDebugLevel',4);
+% Screen('Preference','VisualDebugLevel',4);
+% Screen('Preference','SuppressAllWarnings',1);
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
@@ -43,6 +37,25 @@ escKey = KbName('ESCAPE');
 seenKey = KbName('f'); % F key for left hand
 notSeenKey = KbName('j'); % J key for right hand
 
+%% Make desgin for this session
+% 1000 category image from next two subjects are loaded for preparing behavior
+% BIN.classID is ImageNet class id, 1000x1, cell array
+% BIN.stimulus is stimlus filename, 1000 x 80, cell array
+designDir = fullfile(workDir,'stimulus','train','designMatrix');
+load(fullfile(designDir,'BIN.mat'),'BIN');
+% session id of this subject and next two subejct
+sess = 4*(subID+1) + sessID;
+sess =  mod(sess,80);
+% 1000 category and each has an example
+categoryName = repmat(BIN.classID,length(sess),1);
+exampleName = reshape(BIN.stimulus(:,sess),[],1);
+nStim = length(exampleName);
+
+% Randomize stimulus
+idx = randperm(nStim);
+categoryName = categoryName(idx);
+exampleName = exampleName(idx);
+
 %% Load stimulus and instruction
 imgAngle = 16; fixOuterAngle = 0.3; fixInnerAngle = 0.2;
 
@@ -54,49 +67,25 @@ imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
 fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
 fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 
-% Load stimulus
-stimDir = fullfile(workDir,'stimulus','test');
-expImgName = extractfield(dir(fullfile(stimDir,'expImages')), 'name');
-ctrImgName = extractfield(dir(fullfile(stimDir,'ctrImages')), 'name');
-imgName = [ctrImgName(3:end),expImgName(3:end)];
-nStim = length(imgName);
-img = cell(nStim,1);
-for t = 1:nStim
-    if t <= 120
-        img{t} = imresize(imread(fullfile(stimDir, 'ctrImages', imgName{t})),[imgPixelHor imgPixelVer]);
-    else 
-        img{t} = imresize(imread(fullfile(stimDir, 'expImages', imgName{t})),[imgPixelHor imgPixelVer]);
-    end
-end
-
-% Load instruction image
-imgStart = imread(fullfile(workDir, 'instruction', 'testStart.JPG'));
-imgEnd = imread(fullfile(workDir, 'instruction', 'testEnd.JPG'));
-
-
-%% Make design
-nTrial = nStim;
-imgID = 1:nStim;
-cond = ones(nTrial,1); % total trials
-cond(1:length(ctrImgName(3:end)),1) = -1;
-
-% [onset,imgID,cond,key,rt,timingError].
-trial = zeros(nTrial, 6);
-trial(:,2:3) = [imgID',cond]; % [imgID,condition]
-% Randomize stimulus
-idx = randperm(nStim);
-trial = trial(idx,:);
-
-
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 2.5 - 0.5*flipInterval; % on duration for a stimulus
 maskDur = 0.2; % ending duration of each trial
+maxDur = 2; % max duration of a trial
 beginDur = 4; % beigining fixation duration
 endDur = 4; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
+stimDir = fullfile(workDir,'stimulus','train','images');
 
+% Load instruciton and stimuli
+imgStart = imread(fullfile(workDir, 'instruction', 'behStart.JPG'));
+imgEnd = imread(fullfile(workDir, 'instruction', 'behEnd.JPG'));
+img = cell(nTrial,1);
+for t = 1:nTrial
+    imgFile = fullfile(stimDir, categoryName{t}, exampleName{t});
+    img{t} = imresize(imread(imgFile), [imgPixelHor imgPixelVer]);
+end
 
 % Show instruction and wait ready signal from subject
 startTexture = Screen('MakeTexture', wptr, imgStart);
@@ -116,10 +105,9 @@ Screen('Flip',wptr);
 WaitSecs(beginDur);
 
 % Show stimulus for each trial
-tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
-    stimTexture = Screen('MakeTexture', wptr, img{trial(t,2)});
+    stimTexture = Screen('MakeTexture', wptr, img{t});
     Screen('PreloadTextures',wptr,stimTexture);
     Screen('DrawTexture', wptr, stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
@@ -127,10 +115,9 @@ for t = 1:nTrial
     Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
     
-    trial(t,1) = tStim - tStart;
-    
+
     % Record response while stimulus is on
-    key = 0; rt = 0;
+    rt = 0;
     while KbCheck(), end % empty the key buffer
     while GetSecs - tStim < onDur
         if GetSecs - tStim > 1.5
@@ -144,20 +131,32 @@ for t = 1:nTrial
         if keyIsDown
             if keyCode(escKey),sca; return;
             elseif keyCode(seenKey)
-                key = 1; rt = tKey - tStim; break;
+                rt = tKey - tStim; break;
             elseif keyCode(notSeenKey)
-                key = -1; rt = tKey - tStim;break;
+                rt = tKey - tStim;break;
             end
         end
     end
-    trial(t, 4:5) = [key,rt];
     Screen('Close',stimTexture);
     % Show fixation
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
     Screen('DrawingFinished',wptr);
     tFix = Screen('Flip', wptr);
-    while GetSecs - tFix < maskDur, end
+
+    if rt % If subject already responds,just show fixation with short time
+        while GetSecs - tFix < maskDur, end
+    else % if subejct have not responded, wait the response until the end of the trial
+        while GetSecs - tStim < maxDur
+            [keyIsDown, ~, keyCode] = KbCheck();
+            if keyIsDown
+                if keyCode(escKey),sca; return;
+                    elseif keyCode(seenKey), break;
+                    elseif keyCode(notSeenKey), break;
+                end
+            end
+        end
+    end
 end
 
 % Wait ending fixation
@@ -167,38 +166,9 @@ Screen('Flip', wptr);
 Screen('Close',endTexture);
 WaitSecs(endDur);
 
-% Save data for this runID
-clear img imgStart imgEnd
-resultFile = fullfile(sessDir,...
-    sprintf('sub%02d_sess%02d_run%02d_beh.mat',subID,sessID,runID));
-
-% If there is an old file, backup it
-if exist(resultFile,'file')
-    oldFile = dir(fullfile(sessDir,...
-        sprintf('sub%02d_sess%02d_run%02d_beh-*.mat',subID,sessID,runID)));
-    % The code works only while try time less than ten
-    if isempty(oldFile), n = 1;
-    else, n = str2double(oldFile(end).name(end-4)) + 1;
-    end
-    % Backup the file from last test
-    newOldFile = fullfile(sessDir,...
-        sprintf('sub%02d_sess%02d_run%02d_beh-%d.mat',subID,sessID,runID,n));
-    copyfile(resultFile,newOldFile);
-end
-
-% Save data
-fprintf('Data were saved to: %s\n',resultFile);
-save(resultFile);
-% Print sucess info
-fprintf('BIN CoCo Memory:sub%d-sess%d-run%d ---- DONE!\n',...
-    subID, sessID,runID)
-if Test == 1
-    fprintf('Testing BIN CoCo Memory')
-end
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
-
 
 
 

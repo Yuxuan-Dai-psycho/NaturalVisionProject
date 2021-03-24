@@ -1,5 +1,5 @@
-function objectRestingMRI(subID, sessID, runID, runDur)
-% function objectRestingMRI(subID, sessID, runID, runDur)
+function ImageNetRestingMRI(subID, sessID, runID, runDur)
+% function ImageNetRestingMRI(subID, sessID, runID, runDur)
 % fMRI experiment for BrainImageNet test dataset
 % subID, subjet ID, integer[1-20]
 % runID, run ID, integer [1-10]
