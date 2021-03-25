@@ -78,7 +78,11 @@ designFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
 if ~exist(designFile,'file')
     load(fullfile(designDir,'BIN.mat'),'BIN');
-    sess = 4*(subID-1)+ sessID;
+    if subID < 11
+        sess = 4*(subID-1)+ sessID;
+    else
+        sess = 30 + subID;
+    end
     sessPar = squeeze(BIN.paradigmClass(:,sess,:));
     classOrder = sessPar(:,2);
     sessStim = BIN.stimulus(classOrder,sess);
