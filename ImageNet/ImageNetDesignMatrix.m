@@ -13,7 +13,7 @@ clc;clear;
 stimDir =  'D:\ImageNet\stim'; % 
 imgDir = fullfile(stimDir,'images');
 designDir = fullfile(stimDir,'designMatrix');
-if ~exist(fullfile(designDir,'BIN.mat'), 'file')
+if exist(fullfile(designDir,'BIN.mat'), 'file')
     error(['The script is to generate design matrix for all subsequent exp.',...
         'So after a design marix(BIN) has been generated and begin to run exp, ',...
         'you should not rerun the code to overwrite the BIN file.']);
