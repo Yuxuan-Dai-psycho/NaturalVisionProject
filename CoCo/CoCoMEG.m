@@ -64,7 +64,6 @@ animateKey2 = KbName('2@'); % Left hand:2@
 inanimateKey1 = KbName('3#'); % Right hand: 3#
 inanimateKey2 = KbName('4$'); % Right hand: 4$
 
-
 %% Load stimulus and instruction
 imgAngle = 16;
 fixOuterAngle = 0.2;% 0.3
@@ -140,7 +139,8 @@ while true
     if all(diff(imgid)),break; end
 end
 trial(:,1) = imgid;
-soa = 1.2 + 0.3 * rand(nTrial,1); % soa, [1.2,1.5]
+jit = [1.8, 2.2]; % random trial length 
+soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); % soa, [1.8,2.2] 
 trial(:,4) = soa;
 
 %% Run experiment
@@ -244,7 +244,6 @@ WaitSecs(endDur);
 % Show cursor and close all
 ShowCursor;
 Screen('CloseAll');
-
 
 %% Evaluate the response
 load(fullfile(designDir,'coco_animate_or_not.mat'),'animate_label');
