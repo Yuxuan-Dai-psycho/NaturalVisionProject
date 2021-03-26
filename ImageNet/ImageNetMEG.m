@@ -112,6 +112,7 @@ runClassName = className(:,runID); % 200 x 5 cell array
 nStim = length(runStim);
 nTrial = nStim;
 trial = zeros(nTrial, 6); % [class, onset, dur, soa, key, rt]
+classID = reshape(classID, [200,nRun]);
 trial(:,1) = classID(:,runID); 
 jit = [1.8, 2.2]; % random trial length 
 soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); % soa, [1.8,2.2] 
