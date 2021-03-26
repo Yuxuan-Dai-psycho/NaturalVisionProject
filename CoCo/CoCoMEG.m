@@ -104,7 +104,9 @@ Screen('Close',startTexture);
 while KbCheck(); end
 while true
     [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && (keyCode(cueKey1) || keyCode(cueKey2)), break;  end
+%     if keyIsDown && (keyCode(cueKey1) || keyCode(cueKey2)), break;  end
+    if keyIsDown && (keyCode(animateKey1) || keyCode(animateKey2)), break; 
+    end
 end
 Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, redFixation, [], 2);
 Screen('Flip', wptr);
@@ -246,7 +248,9 @@ ShowCursor;
 Screen('CloseAll');
 
 %% Evaluate the response
-load(fullfile(designDir,'coco_animate_or_not.mat'),'animate_label');
+% load(fullfile(designDir,'coco_animate_or_not.mat'),'animate_label');
+cocoDir = fullfile(workDir, 'stimulus', 'coco');
+load(fullfile(cocoDir,'coco_animate_or_not.mat'),'animate_label');
 % trial, nTial * 6 array;  % [class, onset, dur, soa, key, RT]
 % Make target matrix nTrial x nCond
 target = zeros(nTrial,2);
