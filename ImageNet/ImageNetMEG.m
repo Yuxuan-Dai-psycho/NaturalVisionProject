@@ -91,7 +91,6 @@ if ~exist(designFile,'file')
     end
     
     % For each session, we have 5 runs, 200 images/run
-%     classID = randperm(1:1000); ÐÞ¸Ä
     classID = randperm(1000);
     stimulus= reshape(BIN.stimulus(classID,sess),[200,nRun]);
     className = reshape(BIN.classID(classID), [200,nRun]);
@@ -102,14 +101,11 @@ if ~exist(designFile,'file')
 end
 
 % Load session design
-% load(designFile,'stimulus','classID');
 load(designFile,'stimulus','className', 'classID');
 
 % Image for this run
-% ÐÞ¸Ä
 runStim = stimulus(:,runID); % 200 x 5 cell array 
-% runClass = classID(:,runID); % 200 x 5 cell array
-runClass = className(:,runID); 
+runClassName = className(:,runID); % 200 x 5 cell array
 
 % Collect trial info for this run
 % [class, onset, dur, soa, key, rt]
@@ -123,9 +119,7 @@ trial(:,4) = soa;
 
 %% Load stimulus and instruction
 % Visule angle for stimlus and fixation
-imgAngle = 16;
-fixOuterAngle = 0.2;
-fixInnerAngle = 0.1;
+imgAngle = 16; fixOuterAngle = 0.2; fixInnerAngle = 0.1;
 
 % Visual angle to pixel
 % pixelPerMilimeterHor = 1024/390;
@@ -141,8 +135,7 @@ fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi
 stimDir = fullfile(workDir,'stimulus','imagenet','images');
 img = cell(nStim,1);
 for t = 1:nStim
-%     imgFile = fullfile(stimDir, runClass{t}, runStim{t});
-    imgFile = fullfile(stimDir, runClass{t}, runStim{t});
+    imgFile = fullfile(stimDir, runClassName{t}, runStim{t});
     img{t} = imresize(imread(imgFile), [imgPixelHor imgPixelVer]);
 end
 
@@ -209,11 +202,10 @@ for t = 1:nTrial
     % Show stimulus with fixation
     stimTexture = Screen('MakeTexture', wptr, img{t});
     Screen('PreloadTextures',wptr,stimTexture);
-    Screen('DrawTexture', wptr, stimTexture);
+    Screen('DrawTexture', wptr, stimTexture); Screen('Close',stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
     Screen('DrawingFinished',wptr);
-    Screen('Close',stimTexture);
     tStim = Screen('Flip',wptr);
     % Mark onset of the stimulus
     io64(ioObj,address,stimMark);
