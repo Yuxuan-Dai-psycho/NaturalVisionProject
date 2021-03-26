@@ -11,7 +11,7 @@ function trial = ImageNetMEG(subID,sessID,runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
+if ~ismember(subID, 1:30), error('subID is a integer within [1:30]!'); end
 % Check session id
 if subID <= 10
     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
@@ -52,8 +52,6 @@ Screen('Preference', 'SkipSyncTests', 1);
 if runID > 1
     Screen('Preference','VisualDebugLevel',3);
 end
-% Screen('Preference','VisualDebugLevel',4);
-% Screen('Preference','SuppressAllWarnings',1);
 bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
@@ -64,11 +62,10 @@ HideCursor;
 ioObj = io64;
 status = io64(ioObj);
 address = hex2dec('D020');
-if status,error('The driver installation process was successful'); end 
+if status,error('The driver installation process was not successful'); end 
 startMark = 1; endMark = 8; % Mark for begin and end of the recording
 stimMark = 2; respMark = 4; % Mark for stimulus onset and response timing
 markDur = 0.005;
-
 
 %% Key setting
 KbName('UnifyKeyNames'); 
@@ -79,7 +76,6 @@ animateKey1 = KbName('1!'); % Left hand:1!
 animateKey2 = KbName('2@'); % Left hand:2@
 inanimateKey1 = KbName('3#'); % Right hand: 3#
 inanimateKey2 = KbName('4$'); % Right hand: 4$
-
 
 %% Make design for this session
 % Set design dir
@@ -95,7 +91,6 @@ if ~exist(designFile,'file')
     end
     
     % For each session, we have 5 runs, 200 images/run
-%     classID = randperm(1:1000); ÐÞ¸Ä
     classID = randperm(1000);
     stimulus= reshape(BIN.stimulus(classID,sess),[200,nRun]);
     className = reshape(BIN.classID(classID), [200,nRun]);
@@ -106,29 +101,25 @@ if ~exist(designFile,'file')
 end
 
 % Load session design
-% load(designFile,'stimulus','classID');
 load(designFile,'stimulus','className', 'classID');
 
 % Image for this run
-% ÐÞ¸Ä
 runStim = stimulus(:,runID); % 200 x 5 cell array 
-% runClass = classID(:,runID); % 200 x 5 cell array
-runClass = className(:,runID); 
+runClassName = className(:,runID); % 200 x 5 cell array
 
 % Collect trial info for this run
 % [class, onset, dur, soa, key, rt]
 nStim = length(runStim);
 nTrial = nStim;
 trial = zeros(nTrial, 6); % [class, onset, dur, soa, key, rt]
-trial(:,1) = classID(:,runID);  
-soa = 1.2 + 0.3 * rand(nTrial,1); % soa, [1.2,1.5] 
+trial(:,1) = classID(:,runID); 
+jit = [1.8, 2.2]; % random trial length 
+soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); % soa, [1.8,2.2] 
 trial(:,4) = soa; 
 
 %% Load stimulus and instruction
 % Visule angle for stimlus and fixation
-imgAngle = 16;
-fixOuterAngle = 0.2;
-fixInnerAngle = 0.1;
+imgAngle = 16; fixOuterAngle = 0.2; fixInnerAngle = 0.1;
 
 % Visual angle to pixel
 % pixelPerMilimeterHor = 1024/390;
@@ -144,8 +135,7 @@ fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi
 stimDir = fullfile(workDir,'stimulus','imagenet','images');
 img = cell(nStim,1);
 for t = 1:nStim
-%     imgFile = fullfile(stimDir, runClass{t}, runStim{t});
-    imgFile = fullfile(stimDir, runClass{t}, runStim{t});
+    imgFile = fullfile(stimDir, runClassName{t}, runStim{t});
     img{t} = imresize(imread(imgFile), [imgPixelHor imgPixelVer]);
 end
 
@@ -172,7 +162,7 @@ Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
 
-fprintf(['*** Please ask MEG console to turn on MEG.\n' ...
+fprintf(['*** Please ask MEG operator to turn on MEG.\n' ...
     '*** Afte MEG has been turn on, press S key to begin the exp.\n'])
 
 % Set trigger(S key) to begin the experiment
@@ -212,11 +202,10 @@ for t = 1:nTrial
     % Show stimulus with fixation
     stimTexture = Screen('MakeTexture', wptr, img{t});
     Screen('PreloadTextures',wptr,stimTexture);
-    Screen('DrawTexture', wptr, stimTexture);
+    Screen('DrawTexture', wptr, stimTexture); Screen('Close',stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
     Screen('DrawingFinished',wptr);
-    Screen('Close',stimTexture);
     tStim = Screen('Flip',wptr);
     % Mark onset of the stimulus
     io64(ioObj,address,stimMark);
