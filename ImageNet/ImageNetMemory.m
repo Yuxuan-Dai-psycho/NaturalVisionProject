@@ -8,22 +8,23 @@ function trial = ImageNetMemory(subID,sessID,sRun)
 
 if nargin < 3, sRun = 1; end
 
-%% Check subject information+
+%% Check subject information
 % Check subject id
-if ~ismember(subID, [1:50,10086]), error('subID is a integer within [1:50]!'); end
+% 11\13\14\18\19 -1 has been scanned 
+% correspond to 11\19\23\39\43th subject in the new design
+if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
 % Check session id
 if subID <= 10
     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
 else
     if ~ismember(sessID, 1), error('sessID can only be [1] for SubID 11-50!');end
 end
-
 % Check start run
 if ~ismember(sRun, 1:4), error('sRun is a integer within [1:4]!');end
 
 %% Data dir
 workDir = pwd;
-imageNetDir = fullfile(workDir,'data','fmri','ImageNet');
+imageNetDir = fullfile(workDir,'data','fmri','imagenet');
 sessDir = fullfile(imageNetDir,sprintf('sub%02d/sess%02d',subID,sessID));
 
 % The fMRI session dir should exist
@@ -55,7 +56,7 @@ notSeenKey = KbName('j'); % J key for right hand
 % 2000 images are randomized and shown in four run(each with 500 images)
 % BIN.classID is ImageNet class id, 1000x1, cell array
 % BIN.stimulus is stimlus filename, 1000x80, cell array
-designDir = fullfile(workDir,'stimulus','ImageNet','designMatrix');
+designDir = fullfile(workDir,'stimulus','imagenet','designMatrix');
 designFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_design_beh.mat',subID,sessID));
 if ~exist(designFile,'file')
@@ -121,7 +122,7 @@ fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
 alertColor = [255 0 0];
 nTrial = nStim/nRun;
-stimDir = fullfile(workDir,'stimulus','ImageNet','images');
+stimDir = fullfile(workDir,'stimulus','imagenet','images');
 for runID = sRun:nRun
     % Load instruciton and stimuli
     imgStart = imread(fullfile(workDir, 'instruction', 'behStart.JPG'));

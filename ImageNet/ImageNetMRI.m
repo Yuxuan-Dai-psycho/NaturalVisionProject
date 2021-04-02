@@ -9,6 +9,8 @@ function trial = ImageNetMRI(subID,sessID,runID)
 
 %% Check subject information
 % Check subject id
+% 11\13\14\18\19 -1 has been scanned 
+% correspond to 11\19\23\39\43th subject in the new design
 if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
 % Check session id
 if subID <= 10
