@@ -10,9 +10,7 @@ if nargin < 3, sRun = 1; end
 
 %% Check subject information
 % Check subject id
-% 11\13\14\18\19 -1 has been scanned 
-% correspond to 11\19\23\39\43th subject in the new design
-if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
+if ~ismember(subID, [1:50, 10086]), error('subID is a integer within [1:50]!'); end
 % Check session id
 if subID <= 10
     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
@@ -161,7 +159,6 @@ for runID = sRun:nRun
         stimTexture = Screen('MakeTexture', wptr, img{t});
         Screen('PreloadTextures',wptr,stimTexture);
         Screen('DrawTexture', wptr, stimTexture);
-        Screen('Close',stimTexture);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
         Screen('DrawingFinished',wptr);
