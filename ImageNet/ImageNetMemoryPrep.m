@@ -41,7 +41,7 @@ notSeenKey = KbName('j'); % J key for right hand
 % 1000 category image from next two subjects are loaded for preparing behavior
 % BIN.classID is ImageNet class id, 1000x1, cell array
 % BIN.stimulus is stimlus filename, 1000 x 80, cell array
-designDir = fullfile(workDir,'stimulus','train','designMatrix');
+designDir = fullfile(workDir,'stimulus','imagenet','designMatrix');
 load(fullfile(designDir,'BIN.mat'),'BIN');
 % session id of this subject and next two subejct
 sess = 4*(subID+1) + sessID;
@@ -76,7 +76,7 @@ beginDur = 4; % beigining fixation duration
 endDur = 4; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
-stimDir = fullfile(workDir,'stimulus','train','images');
+stimDir = fullfile(workDir,'stimulus','imagenet','images');
 
 % Load instruciton and stimuli
 imgStart = imread(fullfile(workDir, 'instruction', 'behStart.JPG'));
