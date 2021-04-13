@@ -114,7 +114,7 @@ nTrial = nStim;
 trial = zeros(nTrial, 6); % [class, onset, dur, soa, key, rt]
 classID = reshape(classID, [200,nRun]);
 trial(:,1) = classID(:,runID); 
-jit = [1.8, 2.2]; % random trial length 
+jit = [1.3, 1.7]; % random trial length 
 soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); % soa, [1.8,2.2] 
 trial(:,4) = soa; 
 
@@ -183,7 +183,7 @@ end
 
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
-onDur = 1 - 0.5*flipInterval; % on duration for a stimulus
+onDur = 0.7 - 0.5*flipInterval; % on duration for a stimulus
 beginDur = 1; % beigining fixation duration
 endDur = 1; % ending fixation duration
 fixOuterColor = [0 0 0]; % color of fixation circular ring
@@ -197,7 +197,7 @@ Screen('Flip',wptr);
 WaitSecs(beginDur);
 
 % Show stimulus
-% sti(0.5) --> fix( 0.7-1.0) --> next trial
+% sti(0.7) --> fix( 0.6-1.0) --> next trial
 tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
