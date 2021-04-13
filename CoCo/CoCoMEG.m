@@ -152,8 +152,10 @@ beginDur = 1; % beigining fixation duration
 endDur = 1; % ending fixation duration
 
 % Show begining fixation
-Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+% Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+% Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+    [fixOuterSize, fixInnerSize], [fixOuterColor', whiteFixation'], [], 2);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
 
@@ -163,8 +165,10 @@ tStart = GetSecs;
 for t = 1:nTrial
     stimTexture = Screen('MakeTexture', wptr, img{trial(t,1)});
     Screen('DrawTexture', wptr, stimTexture);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation ,[], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation ,[], 2);
+    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+        [fixOuterSize, fixInnerSize], [fixOuterColor', whiteFixation'], [], 2);
     Screen('DrawingFinished',wptr);
     Screen('Close',stimTexture);
     tStim = Screen('Flip',wptr);
@@ -194,8 +198,10 @@ for t = 1:nTrial
     end
     
     % Show after stimulus fixation
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+        [fixOuterSize, fixInnerSize], [fixOuterColor', whiteFixation'], [], 2);
     Screen('DrawingFinished',wptr);
     tFix = Screen('Flip',wptr);
     trial(t, 3) = tFix - tStim; % stimulus duration

@@ -190,8 +190,10 @@ fixOuterColor = [0 0 0]; % color of fixation circular ring
 fixInnerColor = [255 255 255]; % color of fixation circular point
 
 % Show begining fixation
-Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
+% Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+% Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
+Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+    [fixOuterSize, fixInnerSize], [fixOuterColor', fixInnerColor'], [], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
@@ -204,8 +206,10 @@ for t = 1:nTrial
     stimTexture = Screen('MakeTexture', wptr, img{t});
     Screen('PreloadTextures',wptr,stimTexture);
     Screen('DrawTexture', wptr, stimTexture); Screen('Close',stimTexture);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
+    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+        [fixOuterSize, fixInnerSize], [fixOuterColor', fixInnerColor'], [], 2);
     Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
     % Mark onset of the stimulus
@@ -234,8 +238,10 @@ for t = 1:nTrial
     end
   
     % Show fixation
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
+    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+        [fixOuterSize, fixInnerSize], [fixOuterColor', fixInnerColor'], [], 2);
     Screen('DrawingFinished',wptr);
     tFix = Screen('Flip', wptr);
     trial(t, 3) = tFix - tStim; % stimulus duration
