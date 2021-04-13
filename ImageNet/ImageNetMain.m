@@ -5,6 +5,8 @@ addpath(genpath(workDir));
 
 %% Set subject and session info: 请务必不要搞错subID 和 sessID  
 % You should manually input subject ID and session ID
+% % sub11\13\14\18\19 -sess01 has been scanned 
+% correspond to 11\19\23\39\43th subject in the new design
 subName = 'Test';subID = 10086; sessID = 1; 
 
 %% Run ImageNet fMRI  

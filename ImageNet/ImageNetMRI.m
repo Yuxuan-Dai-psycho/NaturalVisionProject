@@ -9,7 +9,7 @@ function trial = ImageNetMRI(subID,sessID,runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:50), error('subID is a integer within [1:50]!'); end
+if ~ismember(subID, [1:50, 10086]), error('subID is a integer within [1:50]!'); end
 % Check session id
 if subID <= 10
     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
@@ -40,7 +40,7 @@ sessDir = fullfile(subDir,sprintf('sess%02d', sessID));
 if ~exist(sessDir,'dir'), mkdir(sessDir), end
 
 %% for Test checking
-if subID ==10086
+if subID == 10086
    subID = 1; 
    Test = 1;
 else
