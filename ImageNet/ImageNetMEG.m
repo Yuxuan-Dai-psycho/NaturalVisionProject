@@ -1,4 +1,4 @@
-function trial = ImageNetMEG(subID,sessID,runID)
+function trial = ImageNetMEG(subID,runID)
 % function [subject,task] = ImageNetMEG(subID,sessID,runID)
 % ImageNet MEG experiment stimulus procedure
 % subjects perform animate vs. inanimate discrimination task
@@ -13,15 +13,19 @@ function trial = ImageNetMEG(subID,sessID,runID)
 % Check subject id
 if ~ismember(subID, 1:30), error('subID is a integer within [1:30]!'); end
 % Check session id
-if subID <= 10
-    if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
-else
-    if ~ismember(sessID, 1:2), error('sessID can only be [1:2] for SubID 11-30!');end
-end
+% if subID <= 10
+%     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
+% else
+%     if ~ismember(sessID, 1:2), error('sessID can only be [1:2] for SubID 11-30!');end
+% end
 % Check run id
-if ~ismember(runID, 1:5), error('runID is a integer within [1:5]!'); end
+if subID < 10
+    if ~ismember(runID, 1:20), error('runID is a integer within [1:20]!'); end
+else
+    if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
+end
 nRun = 5;
-
+sessID = floor(runID/nRun);
 %% Data dir
 % Check workDir for MEG test 
 workDir = pwd;
@@ -115,7 +119,10 @@ trial = zeros(nTrial, 6); % [class, onset, dur, soa, key, rt]
 classID = reshape(classID, [200,nRun]);
 trial(:,1) = classID(:,runID); 
 jit = [1.3, 1.7]; % random trial length 
-soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); % soa, [1.8,2.2] 
+% soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1);
+jitter = rand(nTrial,1); % soa, [1.3£¬1.7]
+jitter = jitter - sum(jitter)/nTrial;
+soa = rescale(jitter, jit(1), jit(2));
 trial(:,4) = soa; 
 
 %% Load stimulus and instruction
