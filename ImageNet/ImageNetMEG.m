@@ -20,9 +20,9 @@ if ~ismember(subID, 1:30), error('subID is a integer within [1:30]!'); end
 % end
 % Check run id
 if subID < 10
-    if ~ismember(runID, 1:20), error('runID is a integer within [1:20]!'); end
+    if ~ismember(runID, 1:20), error('runID is a integer within [1:20] for SubID 1-10!'); end
 else
-    if ~ismember(runID, 1:10), error('runID is a integer within [1:10]!'); end
+    if ~ismember(runID, 1:10), error('runID is a integer within [1:10] for SubID 11-30!'); end
 end
 nRun = 5;
 sessID = floor(runID/nRun);
