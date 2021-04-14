@@ -1,4 +1,4 @@
-function trial = CoCoMEG(subID, sessID, runID)
+function trial = CoCoMEG(subID, runID)
 % function trial = CoCoMEG(subID, sessID, runID)
 % fMRI experiment for BrainImageNet test dataset
 % subID, subjet ID, integer[1-20]
@@ -6,10 +6,11 @@ function trial = CoCoMEG(subID, sessID, runID)
 % workdir(or codeDir) -> sitmulus/instruciton/data
 
 %% Check subject information
+sessID = 1;
 % Check subject id
 if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
 % Check session id
-if ~ismember(sessID, 1:1), error('sessID is a integer within [1:1]!');end
+% if ~ismember(sessID, 1:1), error('sessID is a integer within [1:1]!');end
 % Check run id
 nRun = 10;
 if ~ismember(runID, 1:nRun), error('runID is a integer within [1:10]!'); end
@@ -142,7 +143,10 @@ while true
 end
 trial(:,1) = imgid;
 jit = [1.3, 1.7]; % random trial length 
-soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); % soa, [1.8,2.2] 
+% soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); 
+jitter = rand(nTrial,1); % soa, [1.3£¬1.7]
+jitter = jitter - sum(jitter)/nTrial;
+soa = rescale(jitter, jit(1), jit(2));
 trial(:,4) = soa;
 
 %% Run experiment
