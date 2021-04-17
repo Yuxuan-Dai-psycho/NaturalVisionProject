@@ -9,6 +9,11 @@ addpath(genpath(workDir));
 % correspond to 11\19\23\39\43th subject in the new design
 subName = 'Test';subID = 10086; sessID = 1; 
 
+% You should manually input subject ID and run ID for MEG
+subName = 'Test';subID = 10086; runID = 1; % run ID should be a integer within [1:20] for Sub ID 1-10, 
+                                           % [1:10] for Sub ID 11-30!
+sessID = floor(runID/5); % No manual changes are required
+
 %% Run ImageNet fMRI  
 % You should mannual change runID for each run
 close all;sca;
@@ -32,5 +37,5 @@ ImageNetMemory(subID,sessID);
 % For other 20 subjects, only one round of MEG exp: 
 % session 1 and 2 will conducted.
 close all;sca;
-ImageNetMEG(subID,sessID,1);
+ImageNetMEG(subID,sessID,runID);
 

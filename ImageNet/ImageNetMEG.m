@@ -1,4 +1,4 @@
-function trial = ImageNetMEG(subID,runID)
+function trial = ImageNetMEG(subID,sessID, runID)
 % function [subject,task] = ImageNetMEG(subID,sessID,runID)
 % ImageNet MEG experiment stimulus procedure
 % subjects perform animate vs. inanimate discrimination task
@@ -12,20 +12,20 @@ function trial = ImageNetMEG(subID,runID)
 %% Check subject information
 % Check subject id
 if ~ismember(subID, 1:30), error('subID is a integer within [1:30]!'); end
-% Check session id
-% if subID <= 10
-%     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
-% else
-%     if ~ismember(sessID, 1:2), error('sessID can only be [1:2] for SubID 11-30!');end
-% end
-% Check run id
-if subID < 10
-    if ~ismember(runID, 1:20), error('runID is a integer within [1:20] for SubID 1-10!'); end
+Check session id
+if subID <= 10
+    if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
 else
-    if ~ismember(runID, 1:10), error('runID is a integer within [1:10] for SubID 11-30!'); end
+    if ~ismember(sessID, 1:2), error('sessID can only be [1:2] for SubID 11-30!');end
 end
+% Check run id
+% if subID < 10
+%     if ~ismember(runID, 1:20), error('runID is a integer within [1:20] for SubID 1-10!'); end
+% else
+%     if ~ismember(runID, 1:10), error('runID is a integer within [1:10] for SubID 11-30!'); end
+% end
+if ~ismember(runID, 1:5), error('runID is a integer within [1:5]!'); end
 nRun = 5;
-sessID = floor(runID/nRun);
 %% Data dir
 % Check workDir for MEG test 
 workDir = pwd;
