@@ -134,10 +134,14 @@ imgAngle = 16; fixOuterAngle = 0.2; fixInnerAngle = 0.1;
 % pixelPerMilimeterVer = 768/295;
 pixelPerMilimeterHor = 1024/419;
 pixelPerMilimeterVer = 768/315;
-imgPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2)));
-imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
-fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
-fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
+% imgPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2)));
+% imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
+% fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
+% fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
+imgPixelHor = round(pixelPerMilimeterHor * (2 * 751 * tan(imgAngle/180*pi/2)));
+imgPixelVer = round(pixelPerMilimeterVer * (2 * 751 * tan(imgAngle/180*pi/2)));
+fixOuterSize = round(pixelPerMilimeterHor * (2 * 751 * tan(fixOuterAngle/180*pi/2)));
+fixInnerSize = round(pixelPerMilimeterHor * (2 * 751 * tan(fixInnerAngle/180*pi/2)));
 
 % Load stimuli
 stimDir = fullfile(workDir,'stimulus','imagenet','images');
