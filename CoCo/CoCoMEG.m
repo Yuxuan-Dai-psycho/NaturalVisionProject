@@ -59,9 +59,9 @@ KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
 % Left hand for animate and right hand for inanimate
-animateKey1 = KbName('1!'); % Left hand:1!
+animateKey1 = KbName('8*'); % Left hand:8*
 animateKey2 = KbName('2@'); % Left hand:2@
-inanimateKey1 = KbName('3#'); % Right hand: 3#
+inanimateKey1 = KbName('6^'); % Right hand: 6^
 inanimateKey2 = KbName('4$'); % Right hand: 4$
 
 %% Load stimulus and instruction
