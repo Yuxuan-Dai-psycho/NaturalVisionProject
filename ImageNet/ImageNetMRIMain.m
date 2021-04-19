@@ -21,7 +21,7 @@ ImageNetMRI(subID,sessID,runID);
 %% Run Resting fMRI  
 % You should mannual change runID for each run
 close all;sca;
-RestingMRI(subID,sessID);
+ImageNetRestingMRI(subID,sessID);
 
 %% Run ImageNet memroy 
 % You should mannual change runID for each run
