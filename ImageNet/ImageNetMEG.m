@@ -206,6 +206,10 @@ for t = 1:nTrial
     Screen('DrawTexture', wptr, stimTexture); Screen('Close',stimTexture);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
+    
+%      Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+%          [fixInnerSize, fixOuterSize], [fixInnerColor;fixOuterColor]', [], 2);
+    
     Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
     % Mark onset of the stimulus
