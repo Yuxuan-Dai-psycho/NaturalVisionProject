@@ -59,9 +59,9 @@ KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
 % Left hand for animate and right hand for inanimate
-animateKey1 = KbName('1!'); % Left hand:1!
+animateKey1 = KbName('8*'); % Left hand:8*
 animateKey2 = KbName('2@'); % Left hand:2@
-inanimateKey1 = KbName('3#'); % Right hand: 3#
+inanimateKey1 = KbName('6^'); % Right hand: 6^
 inanimateKey2 = KbName('4$'); % Right hand: 4$
 
 %% Load stimulus and instruction
@@ -73,12 +73,16 @@ whiteFixation = [255 255 255]; % color of fixation circular point
 redFixation = [255 0 0]; % color of fixation circular point
 
 % Visual angle to pixel
-pixelPerMilimeterHor = 1024/390;
-pixelPerMilimeterVer = 768/295;
-imgPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2)));
-imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
-fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
-fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
+pixelPerMilimeterHor = 1024/419;
+pixelPerMilimeterVer = 768/315;
+% imgPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2)));
+% imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
+% fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
+% fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
+imgPixelHor = round(pixelPerMilimeterHor * (2 * 751 * tan(imgAngle/180*pi/2)));
+imgPixelVer = round(pixelPerMilimeterVer * (2 * 751 * tan(imgAngle/180*pi/2)));
+fixOuterSize = round(pixelPerMilimeterHor * (2 * 751 * tan(fixOuterAngle/180*pi/2)));
+fixInnerSize = round(pixelPerMilimeterHor * (2 * 751 * tan(fixInnerAngle/180*pi/2)));
 
 % Load stimulus
 stimDir = fullfile(workDir,'stimulus','coco','images');
@@ -91,7 +95,7 @@ for t = 1:nStim
 end
 
 % Load instruction image
-imgStart = imread(fullfile(workDir, 'instruction', 'testStart.JPG'));
+imgStart = imread(fullfile(workDir, 'instruction', 'trainStart.JPG'));
 imgEnd = imread(fullfile(workDir, 'instruction', 'testEnd.JPG'));
 
 %% Show instruction
@@ -141,30 +145,37 @@ while true
     if all(diff(imgid)),break; end
 end
 trial(:,1) = imgid;
-jit = [1.8, 2.2]; % random trial length 
-soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); % soa, [1.8,2.2] 
+jit = [1.3, 1.7]; % random trial length 
+% soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); 
+jitter = rand(nTrial,1); % soa, [1.3£¬1.7]
+jitter = jitter - sum(jitter)/nTrial;
+soa = rescale(jitter, jit(1), jit(2));
 trial(:,4) = soa;
 
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
-onDur = 0.5 - 0.5*flipInterval; % on duration for a stimulus
+onDur = 0.7 - 0.5*flipInterval; % on duration for a stimulus
 beginDur = 1; % beigining fixation duration
 endDur = 1; % ending fixation duration
 
 % Show begining fixation
-Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+% Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+% Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+    [fixOuterSize, fixInnerSize], [fixOuterColor', whiteFixation'], [], 2);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
 
 % Show stimulus
-% sti(0.5) --> fix( 0.7-1.0) --> next trial
+% sti(0.7) --> fix( 0.6-1.0) --> next trial
 tStart = GetSecs;
 for t = 1:nTrial
     stimTexture = Screen('MakeTexture', wptr, img{trial(t,1)});
     Screen('DrawTexture', wptr, stimTexture);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation ,[], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation ,[], 2);
+    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+        [fixOuterSize, fixInnerSize], [fixOuterColor', whiteFixation'], [], 2);
     Screen('DrawingFinished',wptr);
     Screen('Close',stimTexture);
     tStim = Screen('Flip',wptr);
@@ -194,8 +205,10 @@ for t = 1:nTrial
     end
     
     % Show after stimulus fixation
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
+    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
+        [fixOuterSize, fixInnerSize], [fixOuterColor', whiteFixation'], [], 2);
     Screen('DrawingFinished',wptr);
     tFix = Screen('Flip',wptr);
     trial(t, 3) = tFix - tStim; % stimulus duration
