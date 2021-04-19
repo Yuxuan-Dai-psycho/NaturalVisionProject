@@ -25,16 +25,3 @@ RestingMRI(subID,sessID);
 % You should mannual change runID for each run
 close all;sca;
 CoCoMemory(subID,sessID);
-
-%% Run CoCo MEG 
-% % You should mannual change runID for each run
-% For 10 core subjects, there is one session of COCO MEG. 
-% For other 20 subjects, no COCO MEG
-close all;sca;
-CoCoMEG(subID,sessID,runID);
-
-%% Run Resting MEG 
-% You should mannual change runID for each run
-close all;sca;
-RestingMEG(subID,sessID);
-

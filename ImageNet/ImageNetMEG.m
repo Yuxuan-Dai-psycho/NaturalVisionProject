@@ -6,26 +6,22 @@ function trial = ImageNetMEG(subID,sessID, runID)
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-5]
 % workDir(or codeDir) -> sitmulus/instruciton/data 
-% ImageNet MEG has two rounds of exp. 
-% Two sessions  will be conducted in each round.
+
 
 %% Check subject information
 % Check subject id
 if ~ismember(subID, 1:30), error('subID is a integer within [1:30]!'); end
-Check session id
+
+% Check session id
 if subID <= 10
     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
 else
     if ~ismember(sessID, 1:2), error('sessID can only be [1:2] for SubID 11-30!');end
 end
-% Check run id
-% if subID < 10
-%     if ~ismember(runID, 1:20), error('runID is a integer within [1:20] for SubID 1-10!'); end
-% else
-%     if ~ismember(runID, 1:10), error('runID is a integer within [1:10] for SubID 11-30!'); end
-% end
+
 if ~ismember(runID, 1:5), error('runID is a integer within [1:5]!'); end
 nRun = 5;
+
 %% Data dir
 % Check workDir for MEG test 
 workDir = pwd;
@@ -118,26 +114,19 @@ nTrial = nStim;
 trial = zeros(nTrial, 6); % [class, onset, dur, soa, key, rt]
 classID = reshape(classID, [200,nRun]);
 trial(:,1) = classID(:,runID); 
-jit = [1.3, 1.7]; % random trial length 
-% soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1);
-jitter = rand(nTrial,1); % soa, [1.3£¬1.7]
-jitter = jitter - sum(jitter)/nTrial;
-soa = rescale(jitter, jit(1), jit(2));
-trial(:,4) = soa; 
+
+% Make random soa with mean 1.5 sec
+trange = [1.3, 1.7]; % random trial duration 
+soa = trange(1) + (trange(2)-trange(1)) * rand(nTrial,1);
+trial(:,4) = soa - (mean(soa) - mean(trange)); % shift soa with mean as mean of trange
 
 %% Load stimulus and instruction
 % Visule angle for stimlus and fixation
 imgAngle = 16; fixOuterAngle = 0.2; fixInnerAngle = 0.1;
 
 % Visual angle to pixel
-% pixelPerMilimeterHor = 1024/390;
-% pixelPerMilimeterVer = 768/295;
 pixelPerMilimeterHor = 1024/419;
 pixelPerMilimeterVer = 768/315;
-% imgPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2)));
-% imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
-% fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
-% fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 imgPixelHor = round(pixelPerMilimeterHor * (2 * 751 * tan(imgAngle/180*pi/2)));
 imgPixelVer = round(pixelPerMilimeterVer * (2 * 751 * tan(imgAngle/180*pi/2)));
 fixOuterSize = round(pixelPerMilimeterHor * (2 * 751 * tan(fixOuterAngle/180*pi/2)));
@@ -158,7 +147,7 @@ imgEnd = imread(fullfile(workDir, 'instruction', 'trainEnd.JPG'));
 %% Show instruction
 startTexture = Screen('MakeTexture', wptr, imgStart);
 Screen('PreloadTextures',wptr,startTexture);
-Screen('DrawTexture', wptr, startTexture);
+Screen('DrawTexture', wptr, startTexture); Screen('Close',startTexture);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
 
@@ -195,32 +184,27 @@ end
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 0.7 - 0.5*flipInterval; % on duration for a stimulus
-beginDur = 1; % beigining fixation duration
-endDur = 1; % ending fixation duration
-fixOuterColor = [0 0 0]; % color of fixation circular ring
-fixInnerColor = [255 255 255]; % color of fixation circular point
+beginDur = 5; % beigining fixation duration
+endDur = 5; % ending fixation duration
+fixColor = [0 0 0; 255 255 255]'; % color of fixation 
+fixCenter = [xCenter,yCenter; xCenter,yCenter]';
+fixSize =  [fixOuterSize, fixInnerSize];
 
 % Show begining fixation
-% Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-% Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
-Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
-    [fixOuterSize, fixInnerSize], [fixOuterColor', fixInnerColor'], [], 2);
+Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
 
 % Show stimulus
-% sti(0.7) --> fix( 0.6-1.0) --> next trial
+% sti(0.7) --> fix(0.6-1.0) --> next trial
 tStart = GetSecs;
 for t = 1:nTrial
     % Show stimulus with fixation
     stimTexture = Screen('MakeTexture', wptr, img{t});
     Screen('PreloadTextures',wptr,stimTexture);
     Screen('DrawTexture', wptr, stimTexture); Screen('Close',stimTexture);
-%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
-        [fixOuterSize, fixInnerSize], [fixOuterColor', fixInnerColor'], [], 2);
+    Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
     Screen('DrawingFinished',wptr);
     tStim = Screen('Flip',wptr);
     % Mark onset of the stimulus
@@ -249,10 +233,7 @@ for t = 1:nTrial
     end
   
     % Show fixation
-%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
-    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
-        [fixOuterSize, fixInnerSize], [fixOuterColor', fixInnerColor'], [], 2);
+    Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
     Screen('DrawingFinished',wptr);
     tFix = Screen('Flip', wptr);
     trial(t, 3) = tFix - tStim; % stimulus duration
@@ -293,7 +274,7 @@ io64(ioObj,address,0);
 % Show end instruction
 endTexture = Screen('MakeTexture', wptr, imgEnd);
 Screen('PreloadTextures',wptr,endTexture);
-Screen('DrawTexture', wptr, endTexture);
+Screen('DrawTexture', wptr, endTexture); Screen('Close',endTexture);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
 WaitSecs(endDur)
