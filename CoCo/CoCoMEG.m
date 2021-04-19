@@ -68,17 +68,9 @@ inanimateKey2 = KbName('4$'); % Right hand: 4$
 imgAngle = 16;
 fixOuterAngle = 0.2;% 0.3
 fixInnerAngle = 0.1;% 0.2
-fixOuterColor = [0 0 0]; % color of fixation circular ring
-whiteFixation = [255 255 255]; % color of fixation circular point
-redFixation = [255 0 0]; % color of fixation circular point
-
 % Visual angle to pixel
 pixelPerMilimeterHor = 1024/419;
 pixelPerMilimeterVer = 768/315;
-% imgPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(imgAngle/180*pi/2)));
-% imgPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(imgAngle/180*pi/2)));
-% fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
-% fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 imgPixelHor = round(pixelPerMilimeterHor * (2 * 751 * tan(imgAngle/180*pi/2)));
 imgPixelVer = round(pixelPerMilimeterVer * (2 * 751 * tan(imgAngle/180*pi/2)));
 fixOuterSize = round(pixelPerMilimeterHor * (2 * 751 * tan(fixOuterAngle/180*pi/2)));
@@ -112,7 +104,8 @@ while true
     if keyIsDown && (keyCode(animateKey1) || keyCode(animateKey2)), break; 
     end
 end
-Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, redFixation, [], 2);
+readyDotColor = [255 0 0];
+Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
 Screen('Flip', wptr);
 
 fprintf(['*** Please ask MEG console to turn on MEG.\n' ...
@@ -145,24 +138,23 @@ while true
     if all(diff(imgid)),break; end
 end
 trial(:,1) = imgid;
-jit = [1.3, 1.7]; % random trial length 
-% soa = jit(1) + (jit(2)-jit(1)) * rand(nTrial,1); 
-jitter = rand(nTrial,1); % soa, [1.3£¬1.7]
-jitter = jitter - sum(jitter)/nTrial;
-soa = rescale(jitter, jit(1), jit(2));
-trial(:,4) = soa;
+
+% Make random soa with mean 1.5 sec
+trange = [1.3, 1.7]; % random trial duration 
+soa = trange(1) + (trange(2)-trange(1)) * rand(nTrial,1);
+trial(:,4) = soa - (mean(soa) - mean(trange)); % shift soa with mean as mean of trange
 
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);% get dur of frame
 onDur = 0.7 - 0.5*flipInterval; % on duration for a stimulus
-beginDur = 1; % beigining fixation duration
-endDur = 1; % ending fixation duration
+beginDur = 5; % beigining fixation duration
+endDur = 5; % ending fixation duration
+fixColor = [0 0 0; 255 255 255]'; % color of fixation 
+fixCenter = [xCenter,yCenter; xCenter,yCenter]';
+fixSize =  [fixOuterSize, fixInnerSize];
 
 % Show begining fixation
-% Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-% Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
-Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
-    [fixOuterSize, fixInnerSize], [fixOuterColor', whiteFixation'], [], 2);
+Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
 
@@ -171,13 +163,9 @@ WaitSecs(beginDur);
 tStart = GetSecs;
 for t = 1:nTrial
     stimTexture = Screen('MakeTexture', wptr, img{trial(t,1)});
-    Screen('DrawTexture', wptr, stimTexture);
-%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation ,[], 2);
-    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
-        [fixOuterSize, fixInnerSize], [fixOuterColor', whiteFixation'], [], 2);
+    Screen('DrawTexture', wptr, stimTexture); Screen('Close',stimTexture);
+    Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
     Screen('DrawingFinished',wptr);
-    Screen('Close',stimTexture);
     tStim = Screen('Flip',wptr);
     % Mark onset of the stimulus
     io64(ioObj,address,stimMark);
@@ -205,10 +193,7 @@ for t = 1:nTrial
     end
     
     % Show after stimulus fixation
-%     Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-%     Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, whiteFixation , [], 2);
-    Screen('DrawDots', wptr, [xCenter,xCenter;yCenter,yCenter], ...
-        [fixOuterSize, fixInnerSize], [fixOuterColor', whiteFixation'], [], 2);
+    Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
     Screen('DrawingFinished',wptr);
     tFix = Screen('Flip',wptr);
     trial(t, 3) = tFix - tStim; % stimulus duration
@@ -250,10 +235,9 @@ io64(ioObj,address,0);
 % Show end instruction
 endTexture = Screen('MakeTexture', wptr, imgEnd);
 Screen('PreloadTextures',wptr,endTexture);
-Screen('DrawTexture', wptr, endTexture);
+Screen('DrawTexture', wptr, endTexture);Screen('Close',endTexture);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
-Screen('Close',endTexture);
 WaitSecs(endDur);
 
 % Show cursor and close all
