@@ -5,7 +5,7 @@ function trial = actionHacsMRI(subID,sessID,runID)
 % Subject do household vs not-household activities task
 % subID, subjet ID, integer[1-30]
 % sessID, session ID, integer [1-4]
-% runID, run ID, integer [1-8]
+% runID, run ID, integer [1-12]
 % workdir(or codeDir) -> sitmulus/instruciton/data 
 
 %% Check subject information
@@ -14,14 +14,15 @@ if ~ismember(subID, [1:30, 10086]), error('subID is a integer within [1:30]!'); 
 % Check session id
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check run id
-if ~ismember(runID, 1:8), error('runID is a integer within [1:8]!'); end
-nRun = 8;
-nRepeat = nRun/2; % repeat time of classes in one session
+if ~ismember(runID, 1:12), error('runID is a integer within [1:8]!'); end
+nRun = 12;
+nRepeat = nRun/3; % repeat time of classes in one session
+nClass = 180;
 
 % Check continued subject id
-continuedSubID = []; % complete it after the first part experiment.
-if (sessID > 1) && (~ismember(subID, continuedSubID))
-    error(['subID is not in continuedID within ' mat2str(continuedSubID)]); end
+% continuedSubID = []; % complete it after the first part experiment.
+% if (sessID > 1) && (~ismember(subID, continuedSubID))
+%     error(['subID is not in continuedID within ' mat2str(continuedSubID)]); end
 
 %% Data dir
 % Make work dir
@@ -94,22 +95,23 @@ designFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
 if ~exist(designFile,'file')
     load(fullfile(designDir,'action.mat'),'action');
-    if sessID == 1, sess = subID; % For the first part experiment.
-    else, sess = 30 + 3*(find(continuedSubID==subID)-1) + sessID-1; end
+%     if sessID == 1, sess = subID; % For the first part experiment.
+%     else, sess = 30 + 3*(find(continuedSubID==subID)-1) + sessID-1; end
+    sess = 4*(subID-1)+ sessID;
     % prepare stimulus order and onset info
     sessPar = squeeze(action.paradigmClass(:,sess,:));
     sessStim = squeeze(action.stimulus(:,sess));
-    sessClass = cell(200, nRepeat);
+    sessClass = cell(nClass, nRepeat);
     classOrder = sessPar(:,2);
-    classOrder = reshape(classOrder,[200,nRepeat]);
-    sessStim = reshape(sessStim,[200,nRepeat]);
+    classOrder = reshape(classOrder,[nClass,nRepeat]);
+    sessStim = reshape(sessStim,[nClass,nRepeat]);
     for r = 1:nRepeat % random stim order for each 200 classes
         sessStim(:,r) = sessStim(classOrder(:,r), r);
         sessClass(:,r) = action.className(classOrder(:,r));
     end
-    sessStim = reshape(sessStim,[100,nRun]);
-    sessClass = reshape(sessClass, [100,nRun]);
-    sessPar = reshape(sessPar,[100,nRun,3]);
+    sessStim = reshape(sessStim,[nClass/3,nRun]);
+    sessClass = reshape(sessClass, [nClass/3,nRun]);
+    sessPar = reshape(sessPar,[nClass/3,nRun,3]);
     save(designFile,'sessStim','sessPar','sessClass');
 end
 
@@ -169,9 +171,9 @@ end
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);  % get dur of frame
 onDur = 2 - 0.5*flipInterval; % on duration for a stimulus
-runDur = 480; % duration for a run
-beginDur = 16; % beigining fixation duration
-endDur = 16; % ending fixation duration
+runDur = 300; % duration for a run
+beginDur = 6; % beigining fixation duration
+endDur = 6; % ending fixation duration
 fixColor = [255 255 255]; % color of fixation 
 fixThickness = 2; % thickness of fixation 
 tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
