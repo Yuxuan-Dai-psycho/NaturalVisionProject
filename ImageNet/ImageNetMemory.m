@@ -187,7 +187,8 @@ for runID = sRun:nRun
             end
         end
         trial(t, 4:5) = [key,rt];
-        
+        % Close stimTexture to prevent memory explosion
+        Screen('Close',stimTexture);
         % Show fixation
         Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
         Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor , [], 2);
