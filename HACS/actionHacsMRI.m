@@ -1,8 +1,7 @@
 function trial = actionHacsMRI(subID,sessID,runID)
 % function [subject,task] = actionHacsMRI(subID,sessID,runID)
 % Action HACS fMRI experiment stimulus procedure
-% 30 subject will do one session, the best 10 from them will do another 3 sessions
-% Subject do household vs not-household activities task
+% Subject do sports vs not-sports activities task
 % subID, subjet ID, integer[1-30]
 % sessID, session ID, integer [1-4]
 % runID, run ID, integer [1-12]
@@ -14,7 +13,7 @@ if ~ismember(subID, [1:30, 10086]), error('subID is a integer within [1:30]!'); 
 % Check session id
 if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check run id
-if ~ismember(runID, 1:12), error('runID is a integer within [1:8]!'); end
+if ~ismember(runID, 1:12), error('runID is a integer within [1:12]!'); end
 nRun = 12;
 nRepeat = nRun/3; % repeat time of classes in one session
 nClass = 180;
@@ -63,14 +62,16 @@ HideCursor;
 
 % Visule angle for stimlus and fixation
 videoAngle = 16;
-fixAngle = 0.5;
+fixOuterAngle = 0.2;
+fixInnerAngle = 0.1;
 
 % Visual angle to pixel
 pixelPerMilimeterHor = 1024/390;
 pixelPerMilimeterVer = 768/295;
 videoPixelHor = round(pixelPerMilimeterHor * (2 * 1000 * tan(videoAngle/180*pi/2)));
 videoPixelVer = round(pixelPerMilimeterVer * (2 * 1000 * tan(videoAngle/180*pi/2)));
-fixSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixAngle/180*pi/2)));
+fixOuterSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixOuterAngle/180*pi/2)));
+fixInnerSize = round(pixelPerMilimeterHor * (2 * 1000 * tan(fixInnerAngle/180*pi/2)));
 
 % define size rect of the video frame
 dsRect = [xCenter-videoPixelHor/2, yCenter-videoPixelHor/2,...
@@ -82,11 +83,11 @@ KbName('UnifyKeyNames'); % For cross-platform compatibility of keynaming
 startKey = KbName('s');
 escKey = KbName('ESCAPE');
 
-% Left hand for household and right hand for not-household
-householdKey1 = KbName('1!'); % Left hand:1!
-householdKey2 = KbName('2@'); % Left hand:2@
-notHouseholdKey1 = KbName('3#'); % Right hand: 3#
-notHouseholdKey2 = KbName('4$'); % Right hand: 4$
+% Left hand for sports and right hand for not-sports
+sportsKey1 = KbName('1!'); % Left hand:1!
+sportsKey2 = KbName('2@'); % Left hand:2@
+notSportsKey1 = KbName('3#'); % Right hand: 3#
+notSportsKey2 = KbName('4$'); % Right hand: 4$
 
 %% Make design for this session
 % Set design dir
@@ -105,7 +106,7 @@ if ~exist(designFile,'file')
     classOrder = sessPar(:,2);
     classOrder = reshape(classOrder,[nClass,nRepeat]);
     sessStim = reshape(sessStim,[nClass,nRepeat]);
-    for r = 1:nRepeat % random stim order for each 200 classes
+    for r = 1:nRepeat % random stim order for each 180 classes
         sessStim(:,r) = sessStim(classOrder(:,r), r);
         sessClass(:,r) = action.className(classOrder(:,r));
     end
@@ -125,7 +126,7 @@ runClass = sessClass(:,runID);
 % Collect trial info for this run
 nStim = length(runStim);
 nTrial = nStim;
-trial = zeros(nTrial, 6); % [onset, class, dur, key, RT, timing error]
+trial = zeros(nTrial, 7); % [onset, class, dur, key, RT, realTimePresent, realTimeFinish]
 trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 
 %% Load stimulus and instruction
@@ -152,11 +153,11 @@ Screen('Close',startTexture);
 while KbCheck(); end
 while true
     [keyIsDown,~,keyCode] = KbCheck();
-    if keyIsDown && (keyCode(householdKey1) || keyCode(householdKey2)), break;
+    if keyIsDown && (keyCode(sportsKey1) || keyCode(sportsKey2)), break;
     end
 end
 readyDotColor = [255 0 0];
-Screen('DrawDots', wptr, [xCenter,yCenter], fixSize, readyDotColor, [], 2);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, readyDotColor, [], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip', wptr);
 
@@ -168,20 +169,21 @@ while true
     elseif keyIsDown && keyCode(escKey), sca; return;
     end
 end
+
 %% Run experiment
 flipInterval = Screen('GetFlipInterval', wptr);  % get dur of frame
 onDur = 2 - 0.5*flipInterval; % on duration for a stimulus
 runDur = 300; % duration for a run
 beginDur = 6; % beigining fixation duration
 endDur = 6; % ending fixation duration
-fixColor = [255 255 255]; % color of fixation 
-fixThickness = 2; % thickness of fixation 
+fixOuterColor = [0 0 0]; % color of fixation circular ring
+fixInnerColor = [255 255 255]; % color of fixation circular point
 tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
 if Test == 1, beginDur = 1;end  % test part
 
 % Show begining fixation
-Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
-    xCenter+fixSize/2, yCenter+fixSize/2], fixThickness);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
@@ -193,7 +195,7 @@ for t = 1:nTrial
     mvPtr = Screen('OpenMovie', wptr, videoPath{t});
     Screen('PlayMovie', mvPtr, 1); % 1 means the normal speed    
     tStim = GetSecs;
-    trial(t, 6) = tStim - tStart; % timing error
+    trial(t, 6) = tStim - tStart; % record the real present time
     
     % If subject responds in stimulus presenting, we record it
     key = 0; rt = 0;
@@ -205,8 +207,8 @@ for t = 1:nTrial
         
         % Draw fixation on the screen
         Screen('DrawTexture', wptr, tex, [], dsRect);
-        Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
-            xCenter+fixSize/2, yCenter+fixSize/2], fixThickness);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
         Screen('DrawingFinished',wptr);
         Screen('Flip', wptr);
         Screen('Close', tex)
@@ -215,20 +217,22 @@ for t = 1:nTrial
         [keyIsDown, tKey, keyCode] = KbCheck();
         if keyIsDown
             if keyCode(escKey),sca; return; 
-            elseif keyCode(householdKey1) || keyCode(householdKey2)
+            elseif keyCode(sportsKey1) || keyCode(sportsKey2)
                 key = 1; rt = tKey - tStim;
-            elseif keyCode(notHouseholdKey1)|| keyCode(notHouseholdKey2)
+            elseif keyCode(notSportsKey1)|| keyCode(notSportsKey2)
                 key = -1; rt = tKey - tStim;
             end
         end
     end
+    
     % Close movie
+    trial(t, 7) = GetSecs - tStart; % record the real finish time
     Screen('PlayMovie', mvPtr, 0); % 0 means stop playing
     Screen('CloseMovie', mvPtr); % close movie file
         
     % Show fixation
-    Screen('FrameOval', wptr, fixColor, [xCenter-fixSize/2, yCenter-fixSize/2,...
-        xCenter+fixSize/2, yCenter+fixSize/2], fixThickness);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
+    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
     Screen('DrawingFinished',wptr);
     Screen('Flip', wptr);
     
@@ -244,9 +248,9 @@ for t = 1:nTrial
             [keyIsDown, tKey, keyCode] = KbCheck();
             if keyIsDown
                 if keyCode(escKey),sca; return;
-                elseif keyCode(householdKey1) || keyCode(householdKey2)
+                elseif keyCode(sportsKey1) || keyCode(sportsKey2)
                     key = 1; rt = tKey - tStim;
-                elseif keyCode(notHouseholdKey1)|| keyCode(notHouseholdKey2)
+                elseif keyCode(notSportsKey1)|| keyCode(notSportsKey2)
                     key = -1; rt = tKey - tStim;
                 end
             end
