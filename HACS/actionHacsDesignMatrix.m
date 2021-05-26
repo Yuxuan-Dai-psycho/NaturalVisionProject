@@ -13,13 +13,13 @@ designDir = fullfile(stimDir,'designMatrix');
 fid = fopen(fullfile(designDir,'actionTaxonomy.csv'));
 C = textscan(fid, '%d %s %d %s','Headerlines',1, 'Delimiter',',');
 fclose(fid);
-classID = C{1}; % action class id, 200x1, int array
-className = C{2}; % action class name, 200x1, cell array
-superClassID = C{3}; % 14 superClass ID, 200x1, int array, 
-superClassName = C{4}; % super class name, 200x1 cell array
+classID = C{1}; % action class id, 180x1, int array
+className = C{2}; % action class name, 180x1, cell array
+superClassID = C{3}; % 17 superClass ID, 180x1, int array, 
+superClassName = C{4}; % super class name, 180x1 cell array
 
 nClass = 180;
-nSuperClass = 13;
+nSuperClass = 17;
 nSession = 120;
 nRepeat = 4; % repeat times of all class in one session
 nSessionTmp = nSession*nRepeat; 
