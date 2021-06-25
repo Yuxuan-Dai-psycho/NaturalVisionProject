@@ -12,8 +12,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import confusion_matrix, classification_report
 
-import matplotlib.pyplot as plt
-import matplotlib.font_manager
 
 
 #%% define functions
@@ -141,65 +139,65 @@ print('Test Mean Score in Top5: {:.3f}'.format(top_k_acc(X_probs_mean, y_test_me
 # info.to_csv(f'{out_path}/acc_train_test_split_{sub_name}.csv', index=False)
 
 
-#%% get confusion matrix 
-y_pred_single = pipe.predict(X_test_single)
-y_pred_mean = pipe.predict(X_test_mean)
+# #%% get confusion matrix 
+# y_pred_single = pipe.predict(X_test_single)
+# y_pred_mean = pipe.predict(X_test_mean)
 
-single_con = confusion_matrix(y_test_single, y_pred_single, normalize='true')
-mean_con = confusion_matrix(y_test_mean, y_pred_mean, normalize='true')
-
-
-#%% plot 
+# single_con = confusion_matrix(y_test_single, y_pred_single, normalize='true')
+# mean_con = confusion_matrix(y_test_mean, y_pred_mean, normalize='true')
 
 
-cmap = plt.cm.jet
-norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
-font = {'family': 'serif', 'weight': 'bold', 'size':14}
-# task cn
-plt.imshow(single_con, cmap=cmap, norm=norm)
-plt.colorbar()
-
-plt.xlabel('Predict label', font)
-plt.ylabel('True label', font)
-plt.yticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test_single),
-            fontproperties='arial', weight='bold', size=10)
-plt.xticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test_single),
-            fontproperties='arial', weight='bold', size=10)
-plt.title('Confusion matrix for single trial', font)
-plt.savefig(pjoin(out_path, 'confusion_single.jpg'))
-plt.close()
+# #%% plot 
 
 
-#%% 
+# cmap = plt.cm.jet
+# norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
+# font = {'family': 'serif', 'weight': 'bold', 'size':14}
+# # task cn
+# plt.imshow(single_con, cmap=cmap, norm=norm)
+# plt.colorbar()
 
-cmap = plt.cm.jet
-norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
-font = {'family': 'serif', 'weight': 'bold', 'size':14}
-# task cn
-plt.imshow(mean_con, cmap=cmap, norm=norm)
-plt.colorbar()
-
-plt.xlabel('Predict label', font)
-plt.ylabel('True label', font)
-plt.yticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test_single),
-            fontproperties='arial', weight='bold', size=10)
-plt.xticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test_single),
-            fontproperties='arial', weight='bold', size=10)
-plt.title('Confusion matrix for mean pattern', font)
-plt.savefig(pjoin(out_path, 'confusion_mean.jpg'))
-plt.close()
+# plt.xlabel('Predict label', font)
+# plt.ylabel('True label', font)
+# plt.yticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test_single),
+#             fontproperties='arial', weight='bold', size=10)
+# plt.xticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test_single),
+#             fontproperties='arial', weight='bold', size=10)
+# plt.title('Confusion matrix for single trial', font)
+# plt.savefig(pjoin(out_path, 'confusion_single.jpg'))
+# plt.close()
 
 
-#%% classification report
+# #%% 
 
-single_report = classification_report(y_test_single, y_pred_single, output_dict=True)
-mean_report = classification_report(y_test_mean, y_pred_mean, output_dict=True)
+# cmap = plt.cm.jet
+# norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
+# font = {'family': 'serif', 'weight': 'bold', 'size':14}
+# # task cn
+# plt.imshow(mean_con, cmap=cmap, norm=norm)
+# plt.colorbar()
 
-df_single = pd.DataFrame(single_report).transpose()
-df_mean = pd.DataFrame(mean_report).transpose()
+# plt.xlabel('Predict label', font)
+# plt.ylabel('True label', font)
+# plt.yticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test_single),
+#             fontproperties='arial', weight='bold', size=10)
+# plt.xticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test_single),
+#             fontproperties='arial', weight='bold', size=10)
+# plt.title('Confusion matrix for mean pattern', font)
+# plt.savefig(pjoin(out_path, 'confusion_mean.jpg'))
+# plt.close()
 
-df_single.to_csv(pjoin(out_path, 'classification_report_single.csv'))
-df_mean.to_csv(pjoin(out_path, 'classification_report_mean.csv'))
+
+# #%% classification report
+
+# single_report = classification_report(y_test_single, y_pred_single, output_dict=True)
+# mean_report = classification_report(y_test_mean, y_pred_mean, output_dict=True)
+
+# df_single = pd.DataFrame(single_report).transpose()
+# df_mean = pd.DataFrame(mean_report).transpose()
+
+# df_single.to_csv(pjoin(out_path, 'classification_report_single.csv'))
+# df_mean.to_csv(pjoin(out_path, 'classification_report_mean.csv'))
 
 
 #%%
@@ -242,5 +240,42 @@ df_mean.to_csv(pjoin(out_path, 'classification_report_mean.csv'))
     
     
 
+#%% plot acc comparasion hist
 
-        
+
+import matplotlib.pyplot as plt
+import numpy as np
+from os.path import join as pjoin
+
+main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
+out_path = pjoin(main_path, 'imagenet_decoding', 'results')
+
+labels = ['group_run', 'group_sess', 'sess1', 'sess2', 'sess3', 'sess4']
+single_acc = [0.406, 0.397, 0.315, 0.316, 0.316, 0.331]
+mean_acc = [0.481, 0.454, 0.278, 0.286, 0.338, 0.303]
+
+x = np.arange(len(labels))  # the label locations
+width = 0.3  # the width of the bars
+
+fig, ax = plt.subplots()
+rects1 = ax.bar(x - width/2, single_acc, width, label='single trial', color = '#0A81AB')
+rects2 = ax.bar(x + width/2, mean_acc, width, label='mean pattern', color = '#F54748')
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+font = {'family': 'serif', 'weight': 'normal', 'size':12}
+ax.set_ylabel('Accuracy', font)
+ax.set_title('Accuracy in different cv method', font)
+ax.set_xticks(x)
+ax.set_xticklabels(labels, {'family': 'serif', 'weight': 'normal', 'size':10})
+ax.legend()
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_linewidth(1.5)
+ax.spines['left'].set_linewidth(1.5)
+
+fig.tight_layout()
+
+plt.savefig(pjoin(out_path, 'acc_cv.jpg'))
+plt.close()
+
