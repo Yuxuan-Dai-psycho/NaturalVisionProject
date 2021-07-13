@@ -2,86 +2,73 @@ import numpy as np
 import pandas as pd
 from os.path import join as pjoin
 import scipy.io as sio
+from scipy.spatial import distance_matrix
 
 from sklearn.feature_selection import SelectPercentile
-from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.pipeline import make_pipeline, Pipeline
-from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 # personal function
-from model_utils import nested_cv, find_outlier, gen_param_grid
-
-#%% define params
-n_class = 30
-n_run = 40
-n_train = 30
-n_test = 10
+from model_utils import nested_cv, find_outlier, gen_param_grid, class_sample
 
 #%% load data and label
 main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
-sub_name = 'sub-core03'
+sub_id = 3
+sub_name = 'sub-{:02d}'.format(sub_id)
+sub_core_name = 'sub-core{:02d}'.format(sub_id)
 
-network_path = '/nfs/p1/atlases/ColeAnticevicNetPartition/cortex_parcel_network_assignments.mat'
-data_path = pjoin(main_path, 'imagenet_decoding', f'{sub_name}_10class-cortex.npy')
-label_path = pjoin(main_path, 'imagenet_decoding', f'{sub_name}_10class-label-runidx.npy')
-roi_path = pjoin(main_path, 'MMP_mpmLR32k.mat')
-roi_name_path = pjoin(main_path, 'roilbl_mmp.csv')
+data_path = pjoin(main_path, 'imagenet_decoding', f'{sub_name}_imagenet-response_org_preprocess.npy')
+label_path = pjoin(main_path, 'imagenet_decoding', f'{sub_name}_imagenet-label&run_idx_org_preprocess.npy')
 out_path = pjoin(main_path, 'imagenet_decoding', 'results')
 
 # data, label and run_idx
-data_raw = np.load(data_path)
+data = np.load(data_path)
 label_raw = np.load(label_path)
+label = label_raw[:, 0]
+run_idx = label_raw[:, 1]
 
-# network and roi
-network = sio.loadmat(network_path)['netassignments']
-network = [x[0] for x in network]
-roi = sio.loadmat(roi_path)['glasser_MMP']
-roi_names = pd.read_csv(roi_name_path)
+# sample class
+n_sample = pd.DataFrame(label).value_counts().min()
+data_sample = np.zeros((1, data.shape[1]))
+run_idx_sample = np.zeros((1))
+# loop to sample
+for idx,class_idx in enumerate(np.unique(label)):
+    class_loc = label == class_idx 
+    class_data = data[class_loc]
+    class_mean = np.mean(class_data, axis=0)[np.newaxis, :]
+    eucl_matrix =  distance_matrix(class_data, class_mean)
+    eucl_distance = np.mean(eucl_matrix, axis=0)
+    # select_idx = np.argsort(eucl_distance)
+    # random select sample to make each class has the same number
+    select_idx = np.random.choice(np.sum(class_loc), n_sample, replace=False)
+    data_class = data[class_loc, :][select_idx]
+    run_idx_class = run_idx[class_loc][select_idx]
+    # concatenate on the original array
+    data_sample = np.concatenate((data_sample, data_class), axis=0)
+    run_idx_sample = np.concatenate((run_idx_sample, run_idx_class), axis=0)
+# prepare final data
+data_sample = np.delete(data_sample, 0, axis=0)
+run_idx_sample = np.delete(run_idx_sample, 0, axis=0)
+label_sample = np.repeat(np.unique(label), n_sample)
+    
+
+
 
 #%% grid search loop
 info = pd.DataFrame(columns=['single', 'mean'])
         
-#% Select roi that in visual area
-select_network = [1,2,10,11]
-roi_index = [idx+1 for idx,x in enumerate(network) if x in select_network]
-voxel_selected = np.asarray([True if x in roi_index else False for x in roi[0]])
-data = data_raw[:, voxel_selected]
-print(f'Select {voxel_selected.sum()} voxels')
-label = label_raw[:, 0]
-run_idx = label_raw[:, 1]
-
 #% =======Enhance data====================
 # ======== remove outlier=================
-out_index = find_outlier(data, label, 0.05)
-data = np.delete(data, out_index, axis=0)
-label = np.delete(label, out_index, axis=0)
-run_idx = np.delete(run_idx, out_index, axis=0)
+# out_index = find_outlier(data, label, 0.05)
+# data = np.delete(data, out_index, axis=0)
+# label = np.delete(label, out_index, axis=0)
+# run_idx = np.delete(run_idx, out_index, axis=0)
 
-# ========preprocessing on each run======
-method = ''
-scaler = StandardScaler()
-data_scale = np.zeros(data.shape)
-for idx in range(n_run):
-    tmp_data = data[run_idx==idx, :]
-    # scale on row, based on all run info 
-    mean_pattern = np.mean(tmp_data, axis=0)
-    if method == 'norm':
-        tmp_data = tmp_data/np.linalg.norm(mean_pattern)
-    elif method == 'substract':
-        for idx_scale in range(tmp_data.shape[0]):
-            tmp_data[idx_scale] = (tmp_data[idx_scale] - np.mean(mean_pattern))/np.std(mean_pattern)
-    else:
-        pass 
-    # scale on column, based on feature
-    data_scale[run_idx==idx, :] = scaler.fit_transform(tmp_data)
-        
 # define dual or primal formulation
 # dual = False if X_train.shape[0] > X_train.shape[1] else True
-# =============== start grid searching8==============
+# =============== start grid searching==============
 # define params for grid search
-param_grid = gen_param_grid('svm')                 
+param_grid = gen_param_grid('logistic')                 
 
 # make pipeline
 pipe = Pipeline([('feature_selection', SelectPercentile()),
@@ -90,10 +77,13 @@ pipe = Pipeline([('feature_selection', SelectPercentile()),
 
 loop_time = 1
 for loop_idx in range(loop_time):
+    # sample data
+    # data_sample, label_sample, run_idx_sample = class_sample(data, label, run_idx)
+
     # define nested cv
-    outer_scores_single, outer_scores_mean, best_params = nested_cv(data_scale, label, run_idx, 
+    outer_scores_single, outer_scores_mean, best_params = nested_cv(data, label, run_idx, 
                                                                     Classifier=pipe, param_grid=param_grid,
-                                                                    groupby='group_run', #sess=4,
+                                                                    groupby='group_run', postprocess=True, #sess=4, 
                                                                     )
     print("Cross-validation scores in single trial: ", outer_scores_single)
     print("Mean cross-validation score in single trial: ", np.array(outer_scores_single).mean())
@@ -106,5 +96,5 @@ for loop_idx in range(loop_time):
                                               np.array(outer_scores_mean).mean()]
     print(f'Finish loop {loop_idx}')
     
-info.to_csv(f'{out_path}/scaler_{sub_name}.csv', index=False)
+info.to_csv(f'{out_path}/sample_{sub_name}.csv', index=False)
 

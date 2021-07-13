@@ -1,4 +1,10 @@
+import os
+import matplotlib
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from os.path import join as pjoin
+
 from sklearn.model_selection import GridSearchCV, GroupKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -7,8 +13,107 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectPercentile
+from sklearn.metrics import confusion_matrix, classification_report
 
-def nested_cv(X, y, groups, Classifier, param_grid, groupby='group_run', sess=None):
+
+def plot_confusion_matrix(y_test, y_pred, specify):
+    """
+
+    Parameters
+    ----------
+    y_test : ndarray
+        Groundtruth class 
+    y_pred : ndarray
+        Class predicted by model
+    specify : str
+        Name to specify this plot
+
+    """
+    out_path = '/nfs/m1/BrainImageNet/Analysis_results/imagenet_decoding/results/confusion_matrix'
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
+
+    # get confusion
+    confusion = confusion_matrix(y_test, y_pred, normalize='true')
+    n_class = confusion.shape[0]
+    # visualize
+    cmap = plt.cm.jet
+    norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
+    font = {'family': 'serif', 'weight': 'bold', 'size':14}
+
+    plt.imshow(confusion, cmap=cmap, norm=norm)
+    plt.colorbar()
+    
+    plt.xlabel('Predict label', font)
+    plt.ylabel('True label', font)
+    plt.xticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test).astype(int),
+                fontproperties='arial', weight='bold', size=10)
+    plt.yticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test).astype(int),
+                fontproperties='arial', weight='bold', size=10)
+    plt.title(f'Confusion matrix {specify}', font)
+    plt.savefig(pjoin(out_path, f'confusion_{specify}.jpg'))
+    plt.close()
+
+
+def save_classification_report(y_test, y_pred, specify):
+    """
+
+    Parameters
+    ----------
+    y_test : ndarray
+        Groundtruth class 
+    y_pred : ndarray
+        Class predicted by model
+    specify : str
+        Name to specify this plot
+
+    """
+    out_path = '/nfs/m1/BrainImageNet/Analysis_results/imagenet_decoding/results/classification_report'
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
+    # generate report
+    report = classification_report(y_test, y_pred, output_dict=True)
+    df_report = pd.DataFrame(report).transpose()
+    df_report.to_csv(pjoin(out_path, f'classification_report_{specify}.csv'))
+
+
+def nested_cv(X, y, groups, Classifier, param_grid, 
+              groupby='group_run', sess=None, postprocess=False):
+    """
+    Nested Cross validation with fMRI fold
+
+    Parameters
+    ----------
+    X : ndarray
+        DESCRIPTION.
+    y : ndarray
+        DESCRIPTION.
+    groups : ndarray
+        DESCRIPTION.
+    Classifier : sklearn classifier
+        DESCRIPTION.
+    param_grid : dict
+        DESCRIPTION.
+    groupby : str, optional
+        DESCRIPTION. The default is 'group_run'.
+    sess : int, optional
+        DESCRIPTION. The default is None.
+
+    Raises
+    ------
+    ValueError
+        DESCRIPTION.
+
+    Returns
+    -------
+    outer_scores_single : TYPE
+        DESCRIPTION.
+    outer_scores_mean : TYPE
+        DESCRIPTION.
+    best_params : TYPE
+        DESCRIPTION.
+
+    """
     # change groups 
     # group by sess fold, which contains 4 runs from different sess
     if groupby == 'group_run':
@@ -51,6 +156,7 @@ def nested_cv(X, y, groups, Classifier, param_grid, groupby='group_run', sess=No
     best_params = []
 
     # start cross validation
+    split_index = 1
     for train_index, test_index in outer_cv.split(X, y, groups=groups_new):
         # split train test
         X_train, X_test = X[train_index], X[test_index]
@@ -84,10 +190,61 @@ def nested_cv(X, y, groups, Classifier, param_grid, groupby='group_run', sess=No
         outer_scores_mean.append(grid.score(X_test_mean, y_test_mean))
         best_params.append(grid.best_params_)
         
+        if postprocess:
+            # postprocess: including confusion matrix, classification report
+            # predict
+            y_pred_mean = grid.predict(X_test_mean)
+            y_pred = grid.predict(X_test)
+            # plot and save info
+            plot_confusion_matrix(y_test_mean, y_pred_mean, f'mean_split{split_index}')
+            plot_confusion_matrix(y_test, y_pred, f'single_split{split_index}')
+            save_classification_report(y_test_mean, y_pred_mean, f'mean_split{split_index}')
+            save_classification_report(y_test, y_pred, f'single_split{split_index}')
+        
+        split_index += 1
+        
     return outer_scores_single, outer_scores_mean, best_params
         
 
+def class_sample(data, label, run_idx):
+    """
+    Random selection to make each class has the same sample
 
+    Parameters
+    ----------
+    data : ndarray
+        n_sample x n_feature
+    label : ndarray
+        DESCRIPTION.
+    run_idx : ndarray
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    n_sample = pd.DataFrame(label).value_counts().min()
+    data_sample = np.zeros((1, data.shape[1]))
+    run_idx_sample = np.zeros((1))
+    # loop to sample
+    for idx,class_idx in enumerate(np.unique(label)):
+        class_loc = label == class_idx 
+        # random select sample to make each class has the same number
+        select_idx = np.random.choice(np.sum(class_loc), n_sample, replace=False)
+        data_class = data[class_loc, :][select_idx]
+        run_idx_class = run_idx[class_loc][select_idx]
+        # concatenate on the original array
+        data_sample = np.concatenate((data_sample, data_class), axis=0)
+        run_idx_sample = np.concatenate((run_idx_sample, run_idx_class), axis=0)
+    # prepare final data
+    data_sample = np.delete(data_sample, 0, axis=0)
+    run_idx_sample = np.delete(run_idx_sample, 0, axis=0)
+    label_sample = np.repeat(np.unique(label), n_sample)
+    
+    return data_sample, label_sample, run_idx_sample
+    
+    
 
 def find_outlier(data, label, cont):
     # input: data,  contamination -> outlier ratio
@@ -131,15 +288,15 @@ def gen_param_grid(method):
     param_grid = {
                   'svm':    
                    {'classifier': [SVC(max_iter=8000)], 'feature_selection':[SelectPercentile()],
-                    'classifier__C': [0.001, 0.01],
-                    'classifier__kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+                    'classifier__C': [0.001],
+                    'classifier__kernel': ['linear'],
                     'feature_selection__percentile': [30],},
                   'logistic':    
                       {'classifier': [LogisticRegression(max_iter=8000)], 
                        'feature_selection':[SelectPercentile()],
                        'classifier__C': [0.001],
                        'classifier__solver': ['newton-cg', 'liblinear'],
-                       'feature_selection__percentile': [30]},
+                       'feature_selection__percentile': [25]},
                   'random_forest':    
                       {'classifier': [RandomForestClassifier()], 'feature_selection':[SelectPercentile()],
                        'classifier__C': [0.001, 0.01],
@@ -148,22 +305,5 @@ def gen_param_grid(method):
                   }  
 
     return param_grid[method]            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
