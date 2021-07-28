@@ -10,13 +10,13 @@ function trial = ImageNetMEG(subID,sessID, runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:30), error('subID is a integer within [1:30]!'); end
+if ~ismember(subID, 1:50), error('subID is a integer within [1:30]!'); end
 
 % Check session id
 if subID <= 10
     if ~ismember(sessID, 1:4), error('sessID can be [1:4] for SubID 1-10!');end
 else
-    if ~ismember(sessID, 1:2), error('sessID can only be [1:2] for SubID 11-30!');end
+    if ~ismember(sessID, 1), error('sessID can only be 1 for SubID 11-50!');end
 end
 
 if ~ismember(runID, 1:5), error('runID is a integer within [1:5]!'); end
@@ -74,7 +74,7 @@ escKey = KbName('ESCAPE');
 % Left hand for animate and right hand for inanimate
 animateKey1 = KbName('8*'); % Left hand:8*
 animateKey2 = KbName('2@'); % Left hand:2@
-inanimateKey1 = KbName('6^'); % Right hand: 6^
+inanimateKey1 = KbName('s'); % Right hand: 6^
 inanimateKey2 = KbName('4$'); % Right hand: 4$
 
 %% Make design for this session
@@ -87,7 +87,7 @@ if ~exist(designFile,'file')
     if subID <= 10
         sess = 4*(subID-1)+ sessID;
     else
-        sess = 40 + 2*(subID-11) + sessID;
+        sess = 30 + subID;
     end
     
     % For each session, we have 5 runs, 200 images/run
@@ -133,7 +133,7 @@ fixOuterSize = round(pixelPerMilimeterHor * (2 * 751 * tan(fixOuterAngle/180*pi/
 fixInnerSize = round(pixelPerMilimeterHor * (2 * 751 * tan(fixInnerAngle/180*pi/2)));
 
 % Load stimuli
-stimDir = fullfile(workDir,'stimulus','imagenet','images');
+stimDir = fullfile(workDir,'stimulus','imagenet','images'); %'E:\EXP\BIN\BIN-stimulus\train\images'%
 img = cell(nStim,1);
 for t = 1:nStim
     imgFile = fullfile(stimDir, runClassName{t}, runStim{t});
@@ -317,7 +317,7 @@ if exist(resultFile,'file')
     
     % The code works only while try time less than ten
     if isempty(oldFile), n = 1;
-    else, n = str2double(oldFile(end).name(end-4)) + 1;
+    else n = str2double(oldFile(end).name(end-4)) + 1;
     end
     
     % Backup the file from last test 

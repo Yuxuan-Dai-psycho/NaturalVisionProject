@@ -1,109 +1,100 @@
-import nibabel as nib
 import numpy as np
 import pandas as pd
 from os.path import join as pjoin
 import scipy.io as sio
-import os, pickle
+from scipy.spatial import distance_matrix
 
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.pipeline import make_pipeline
+from sklearn.feature_selection import SelectPercentile
+from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
 
-#%%
-n_roi = 180
-n_threh = 80
-n_run = 40
-n_img = 100
-n_class = 30
+# personal function
+from model_utils import nested_cv, find_outlier, gen_param_grid, class_sample
 
 #%% load data and label
 main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
-sub_name = 'sub-core02'
+sub_id = 3
+sub_name = 'sub-{:02d}'.format(sub_id)
+sub_core_name = 'sub-core{:02d}'.format(sub_id)
 
-data_path = pjoin(main_path, 'imagenet_decoding', f'{sub_name}_imagenet-response.mat')
-label_path = pjoin(main_path, 'imagenet_decoding', f'{sub_name}_imagenet-label.npy')
-network_path = '/nfs/p1/atlases/ColeAnticevicNetPartition/cortex_parcel_network_assignments.mat'
-roi_path = pjoin(main_path, 'MMP_mpmLR32k.mat')
-roi_name_path = pjoin(main_path, 'roilbl_mmp.csv')
+data_path = pjoin(main_path, 'imagenet_decoding', f'{sub_name}_imagenet-response_org_preprocess.npy')
+label_path = pjoin(main_path, 'imagenet_decoding', f'{sub_name}_imagenet-label&run_idx_org_preprocess.npy')
+out_path = pjoin(main_path, 'imagenet_decoding', 'results')
 
-data_raw = sio.loadmat(data_path)['response']
-network = sio.loadmat(network_path)['netassignments']
-network = [x[0] for x in network]
+# data, label and run_idx
+data = np.load(data_path)
 label_raw = np.load(label_path)
-roi = sio.loadmat(roi_path)['glasser_MMP']
-roi_names = pd.read_csv(roi_name_path)
+label = label_raw[:, 0]
+run_idx = label_raw[:, 1]
 
-n_threh = 80
-df_label = pd.DataFrame(label_raw).value_counts()
-label_selection = df_label[df_label >= n_threh].index.tolist()
-define_label = [x[0] for x in label_selection]
-define_label.remove(22)
-define_label.remove(26)
-label_filter = [True if x in define_label else False for x in label_raw]
-
-#%% Select roi that in visual area
-
-select_network = [11]
-roi_index = [idx+1 for idx,x in enumerate(network) if x in select_network]
-voxel_selected = np.asarray([True if x in roi_index else False for x in roi[0]])
-print(f'Select {voxel_selected.sum()} voxels')
-
-data = data_raw[:, :voxel_selected.shape[0]]
-data = data[:, voxel_selected]
-print('Finish data loading')
-
-
-#%% load data
-
-# preprocessing on each run
-data = data.reshape(n_run, n_img, n_roi)
-data_scale = np.zeros(data.shape)
-for run_idx in range(n_run):
-    scaler = StandardScaler()
-    data_scale[run_idx] = scaler.fit_transform(data[run_idx])
-data_scale = data_scale.reshape(n_run*n_img, n_roi)
-
-data_scale = data_scale[label_filter]
-label = label_raw[label_filter]
-
-# grid search based on 
+# sample class
+n_sample = pd.DataFrame(label).value_counts().min()
+data_sample = np.zeros((1, data.shape[1]))
+run_idx_sample = np.zeros((1))
+# loop to sample
+for idx,class_idx in enumerate(np.unique(label)):
+    class_loc = label == class_idx 
+    class_data = data[class_loc]
+    class_mean = np.mean(class_data, axis=0)[np.newaxis, :]
+    eucl_matrix =  distance_matrix(class_data, class_mean)
+    eucl_distance = np.mean(eucl_matrix, axis=0)
+    # select_idx = np.argsort(eucl_distance)
+    # random select sample to make each class has the same number
+    select_idx = np.random.choice(np.sum(class_loc), n_sample, replace=False)
+    data_class = data[class_loc, :][select_idx]
+    run_idx_class = run_idx[class_loc][select_idx]
+    # concatenate on the original array
+    data_sample = np.concatenate((data_sample, data_class), axis=0)
+    run_idx_sample = np.concatenate((run_idx_sample, run_idx_class), axis=0)
+# prepare final data
+data_sample = np.delete(data_sample, 0, axis=0)
+run_idx_sample = np.delete(run_idx_sample, 0, axis=0)
+label_sample = np.repeat(np.unique(label), n_sample)
+    
 
 
 
+#%% grid search loop
+info = pd.DataFrame(columns=['single', 'mean'])
+        
+#% =======Enhance data====================
+# ======== remove outlier=================
+# out_index = find_outlier(data, label, 0.05)
+# data = np.delete(data, out_index, axis=0)
+# label = np.delete(label, out_index, axis=0)
+# run_idx = np.delete(run_idx, out_index, axis=0)
 
-
-
-
-
+# define dual or primal formulation
+# dual = False if X_train.shape[0] > X_train.shape[1] else True
+# =============== start grid searching==============
 # define params for grid search
-param_grid = {#'ridge__alpha': [1, 10, 100, 200, 500, 600, 1000, 1e4, 1e5, 1e6],}
-              'logisticregression__C': [0.001, 0.01, 0.1, 1], }
-              #'svc__C': [1e-6,1e-5,1e-4,1e-3,1e-3,0.01],
-              #'svc__gamma': [1e-6,1e-5,1e-4,1e-3,1e-3,0.01],}
-              #'pca__n_components':[5, 10, 50, 100]} #
+param_grid = gen_param_grid('logistic')                 
 
 # make pipeline
-pipe = make_pipeline(StandardScaler(),
-                     #PCA(),
-                     LogisticRegression(max_iter=5000),
-                     )
+pipe = Pipeline([('feature_selection', SelectPercentile()),
+                 ('classifier', LogisticRegression()),
+                 ])
 
-# define grid search
-grid = GridSearchCV(pipe, param_grid, cv=5, n_jobs=2)
-grid.fit(X_train, y_train)
+loop_time = 1
+for loop_idx in range(loop_time):
+    # sample data
+    # data_sample, label_sample, run_idx_sample = class_sample(data, label, run_idx)
 
-# model = SVC(C=0.01, gamma=0.01)
-# model.fit(X_train, y_train)
-# results = pd.DataFrame(grid.cv_results_)
-# print(results.T)
-print('Best cv Score: {:.2f}'.format(grid.best_score_))
-print('Test Score: {:.2f}'.format(grid.score(X_test, y_test)))
-print('Best parameters: ', grid.best_params_)
-
-y_pred = grid.predict(X_test)
-
-
-
-
+    # define nested cv
+    outer_scores_single, outer_scores_mean, best_params = nested_cv(data, label, run_idx, 
+                                                                    Classifier=pipe, param_grid=param_grid,
+                                                                    groupby='group_run', postprocess=True, #sess=4, 
+                                                                    )
+    print("Cross-validation scores in single trial: ", outer_scores_single)
+    print("Mean cross-validation score in single trial: ", np.array(outer_scores_single).mean())
+    
+    print("Cross-validation scores in mean pattern: ", outer_scores_mean)
+    print("Mean cross-validation score in mean pattern: ", np.array(outer_scores_mean).mean())
+    
+    print("Best params", best_params)
+    info.loc[loop_idx, ['single', 'mean']] = [np.array(outer_scores_single).mean(), 
+                                              np.array(outer_scores_mean).mean()]
+    print(f'Finish loop {loop_idx}')
+    
+info.to_csv(f'{out_path}/sample_{sub_name}.csv', index=False)
 
