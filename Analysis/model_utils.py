@@ -4,13 +4,15 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from os.path import join as pjoin
+from scipy.spatial import distance_matrix
 
 from sklearn.model_selection import GridSearchCV, GroupKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.covariance import EllipticEnvelope
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, Lasso
+from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectPercentile
 from sklearn.metrics import confusion_matrix, classification_report
@@ -76,8 +78,33 @@ def save_classification_report(y_test, y_pred, specify):
     df_report = pd.DataFrame(report).transpose()
     df_report.to_csv(pjoin(out_path, f'classification_report_{specify}.csv'))
 
+def top_k_acc(X_probs, y_test, k):
+    """
+    Accuracy on top k
 
-def nested_cv(X, y, groups, Classifier, param_grid, 
+    Parameters
+    ----------
+    X_probs : ndarray
+        DESCRIPTION.
+    y_test : ndarray
+        GroundTruth
+    k : int
+        DESCRIPTION.
+
+    Returns
+    -------
+    acc_top_k : TYPE
+        DESCRIPTION.
+
+    """
+    # top k
+    class_names = np.unique(y_test)
+    best_n = np.argsort(X_probs, axis=1)[:, -k:]
+    y_top_k = class_names[best_n]
+    acc_top_k = np.mean(np.array([1 if y_test[n] in y_top_k[n] else 0 for n in range(y_test.shape[0])]))
+    return  acc_top_k
+
+def nested_cv(X, y, groups, Classifier, param_grid=None, k=1, grid_search=False,
               groupby='group_run', sess=None, postprocess=False):
     """
     Nested Cross validation with fMRI fold
@@ -183,32 +210,45 @@ def nested_cv(X, y, groups, Classifier, param_grid,
         X_test_mean = np.delete(X_test_mean, 0, axis=0)
         y_test_mean = np.array(y_test_mean)
         # fit grid in inner loop
-        grid = GridSearchCV(Classifier, param_grid, cv=inner_cv, n_jobs=8, verbose=10)
-        grid.fit(X_train, y_train, groups=groups_cv)
-        # test score in outer loop
-        outer_scores_single.append(grid.score(X_test, y_test))
-        outer_scores_mean.append(grid.score(X_test_mean, y_test_mean))
-        best_params.append(grid.best_params_)
+        if grid_search:
+            model = GridSearchCV(Classifier, param_grid, cv=inner_cv, n_jobs=8, verbose=10)
+            model.fit(X_train, y_train, groups=groups_cv)
+            best_params.append(model.best_params_)
+        else:
+            model = Classifier
+            model.fit(X_train, y_train)
+        # handle specified situation on svm
+        if param_grid['classifier'][0].__class__.__name__ in ['SVC', 'Lasso'] or groupby == 'single_sess':
+            outer_scores_single.append(model.score(X_test, y_test))
+            outer_scores_mean.append(model.score(X_test_mean, y_test_mean))
+        else:
+            # get topk score
+            X_probs_mean = model.predict_proba(X_test_mean)
+            X_probs = model.predict_proba(X_test)
+            # test score in outer loop
+            outer_scores_single.append(top_k_acc(X_probs, y_test, k))
+            outer_scores_mean.append(top_k_acc(X_probs_mean, y_test_mean, k))
         
         if postprocess:
             # postprocess: including confusion matrix, classification report
             # predict
-            y_pred_mean = grid.predict(X_test_mean)
-            y_pred = grid.predict(X_test)
+            y_pred_mean = model.predict(X_test_mean)
+            y_pred = model.predict(X_test)
             # plot and save info
             plot_confusion_matrix(y_test_mean, y_pred_mean, f'mean_split{split_index}')
             plot_confusion_matrix(y_test, y_pred, f'single_split{split_index}')
             save_classification_report(y_test_mean, y_pred_mean, f'mean_split{split_index}')
             save_classification_report(y_test, y_pred, f'single_split{split_index}')
-        
+            
+        print(f'Finish cv in split{split_index}')
         split_index += 1
-        
     return outer_scores_single, outer_scores_mean, best_params
         
 
 def class_sample(data, label, run_idx):
     """
-    Random selection to make each class has the same sample
+    Make each class has the same sample based on the distance 
+    between sample and class mean pattern
 
     Parameters
     ----------
@@ -224,14 +264,18 @@ def class_sample(data, label, run_idx):
     None.
 
     """
+    # sample class
     n_sample = pd.DataFrame(label).value_counts().min()
     data_sample = np.zeros((1, data.shape[1]))
     run_idx_sample = np.zeros((1))
     # loop to sample
     for idx,class_idx in enumerate(np.unique(label)):
         class_loc = label == class_idx 
+        class_data = data[class_loc]
+        class_mean = np.mean(class_data, axis=0)[np.newaxis, :]
+        eucl_distance = distance_matrix(class_data, class_mean).squeeze()
         # random select sample to make each class has the same number
-        select_idx = np.random.choice(np.sum(class_loc), n_sample, replace=False)
+        select_idx = np.argsort(eucl_distance)[:n_sample]
         data_class = data[class_loc, :][select_idx]
         run_idx_class = run_idx[class_loc][select_idx]
         # concatenate on the original array
@@ -290,18 +334,25 @@ def gen_param_grid(method):
                    {'classifier': [SVC(max_iter=8000)], 'feature_selection':[SelectPercentile()],
                     'classifier__C': [0.001],
                     'classifier__kernel': ['linear'],
-                    'feature_selection__percentile': [30],},
+                    'feature_selection__percentile': [25],},
                   'logistic':    
                       {'classifier': [LogisticRegression(max_iter=8000)], 
                        'feature_selection':[SelectPercentile()],
                        'classifier__C': [0.001],
-                       'classifier__solver': ['newton-cg', 'liblinear'],
-                       'feature_selection__percentile': [25]},
-                  'random_forest':    
+                       'classifier__solver': ['liblinear'],
+                       'feature_selection__percentile': [10, 30, 50, 70, 100]},
+                  'rf':    
                       {'classifier': [RandomForestClassifier()], 'feature_selection':[SelectPercentile()],
-                       'classifier__C': [0.001, 0.01],
-                       'classifier__kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
-                       'feature_selection__percentile': [30],},
+                       'classifier__n_estimators': [500, 300, 200, ],
+                       'feature_selection__percentile': [25],},
+                  'mlp':
+                      {'classifier': [MLPClassifier()], 'feature_selection':[SelectPercentile()],
+                       'classifier__alpha': [0.01],
+                       'classifier__hidden_layer_sizes': [(200,)],
+                       'feature_selection__percentile': [25],},
+                  'lasso':    
+                      {'classifier': [Lasso(max_iter=8000)],
+                       'classifier__alpha': [0.001, 0.01, 0.1, 1],}, 
                   }  
 
     return param_grid[method]            
