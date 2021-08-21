@@ -395,3 +395,237 @@ plt.plot([-1.5,17], [0.1, 0.1], ls='--', color='gray', lw=1.5)
 plt.savefig(pjoin(out_path, 'acc_roi.jpg'))
 plt.close()
 
+#%% denoised diff
+# including beta & tvalue, denoised, wm
+
+import matplotlib.pyplot as plt
+import numpy as np
+from os.path import join as pjoin
+
+main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
+out_path = pjoin(main_path, 'imagenet_decoding', 'results')
+
+labels = ['beta', 'tvalue', 'beta-denoised','beta-denoised-wm','tvalue-denoised-wm' ]
+rect1_acc = [0.358, 0.364, 0.299, 0.314, 0.315]
+rect1_std = [0.006, 0.005, 0.007, 0.004, 0.007]
+
+rect2_acc = [0.572, 0.575, 0.508, 0.506, 0.519]
+rect2_std = [0.009, 0.008, 0.007, 0.011, 0.011]
+
+x_1 = 3.5*np.arange(len(rect1_acc))
+x_2 = x_1 + 0.8
+font_title = {'family': 'arial', 'weight': 'bold', 'size':14}
+font_other = {'family': 'arial', 'weight': 'bold', 'size':8}
+
+plt.figure(figsize=(10, 7))
+plt.bar(x_1, rect1_acc, label='single-trial', color='#F54748')
+plt.bar(x_2, rect2_acc, label='mean-pattern', color='#0A81AB')
+
+plt.errorbar(x_1, rect1_acc, rect1_std, color='black', ls='none', capsize=3)
+plt.errorbar(x_2, rect2_acc, rect2_std, color='black', ls='none', capsize=3)
+
+for x, y, a, b in zip(x_1, rect1_acc, x_2, rect2_acc):
+    plt.text(x, y+0.01, y, font_other, ha='center', va='bottom')
+    plt.text(a, b+0.01, b, font_other, ha='center', va='bottom')
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax = plt.gca()
+ax.set_ylabel('Accuracy', font_title)
+ax.set_title('Accuracy in different response estimate', font_title)
+
+plt.xticks((x_1 + x_2)/2, labels,
+           fontproperties='arial', weight='bold', size=10)
+plt.yticks(fontproperties='arial', weight='bold', size=10)
+plt.legend(prop=font_other, loc='best')
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_linewidth(1.5)
+ax.spines['left'].set_linewidth(1.5)
+
+ax.set_ylim(0,0.7)
+
+ax.set_xlim(-1.5,16)
+plt.plot([-1.5,16], [0.1, 0.1], ls='--', color='gray', lw=1.5)
+
+plt.savefig(pjoin(out_path, 'acc_denoised.jpg'))
+plt.close()
+
+#%% model diff
+# LDA and logistic
+
+import matplotlib.pyplot as plt
+import numpy as np
+from os.path import join as pjoin
+
+main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
+out_path = pjoin(main_path, 'imagenet_decoding', 'results')
+
+labels = ['Logistic','LDA', 'SVM']
+rect1_acc = [0.488, 0.523, 0.499]
+rect1_std = [0.009, 0.017, 0.011]
+
+rect2_acc = [0.594, 0.615, 0.594]
+rect2_std = [0.010, 0.010, 0.010]
+
+
+x_1 = 3*np.arange(len(rect1_acc))
+x_2 = x_1 + 0.8
+font_title = {'family': 'arial', 'weight': 'bold', 'size':14}
+font_other = {'family': 'arial', 'weight': 'bold', 'size':8}
+
+plt.figure(figsize=(10, 7))
+plt.bar(x_1, rect1_acc, label='sub-02', color='#F54748')
+plt.bar(x_2, rect2_acc, label='sub-03', color='#0A81AB')
+
+plt.errorbar(x_1, rect1_acc, rect1_std, color='black', ls='none', capsize=3)
+plt.errorbar(x_2, rect2_acc, rect2_std, color='black', ls='none', capsize=3)
+
+for x, y, a, b in zip(x_1, rect1_acc, x_2, rect2_acc):
+    plt.text(x, y+0.01, y, font_other, ha='center', va='bottom')
+    plt.text(a, b+0.01, b, font_other, ha='center', va='bottom')
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax = plt.gca()
+ax.set_ylabel('Accuracy', font_title)
+ax.set_title('Accuracy in different model', font_title)
+
+plt.xticks((x_1 + x_2)/2, labels,
+           fontproperties='arial', weight='bold', size=12)
+plt.yticks(fontproperties='arial', weight='bold', size=12)
+plt.legend(prop=font_other, loc='best')
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_linewidth(1.5)
+ax.spines['left'].set_linewidth(1.5)
+
+ax.set_ylim(0,0.7)
+
+ax.set_xlim(-1.5,8)
+plt.plot([-1.5,8], [0.1, 0.1], ls='--', color='gray', lw=1.5)
+
+plt.savefig(pjoin(out_path, 'acc_model2.jpg'))
+plt.close()
+
+
+#%% highly responsive
+import matplotlib.pyplot as plt
+import numpy as np
+from os.path import join as pjoin
+
+main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
+out_path = pjoin(main_path, 'imagenet_decoding', 'results')
+
+labels = ['active', 'discrim', 'stability']
+rect1_acc = [0.390, 0.469, 0.606]
+rect1_std = [0.009, 0.014, 0.006]
+
+rect2_acc = [0.523, 0.615, 0.652]
+rect2_std = [0.017, 0.010, 0.006]
+
+x_1 = 2.5*np.arange(len(rect1_acc))
+x_2 = x_1 + 0.8
+font_title = {'family': 'arial', 'weight': 'bold', 'size':14}
+font_other = {'family': 'arial', 'weight': 'bold', 'size':10}
+
+plt.figure(figsize=(10, 7))
+plt.bar(x_1, rect1_acc, label='sub-02', color='#F54748')
+plt.bar(x_2, rect2_acc, label='sub-03', color='#0A81AB')
+
+plt.errorbar(x_1, rect1_acc, rect1_std, color='black', ls='none', capsize=3)
+plt.errorbar(x_2, rect2_acc, rect2_std, color='black', ls='none', capsize=3)
+
+for x, y, a, b in zip(x_1, rect1_acc, x_2, rect2_acc):
+    plt.text(x, y+0.02, y, font_other, ha='center', va='bottom')
+    plt.text(a, b+0.02, b, font_other, ha='center', va='bottom')
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax = plt.gca()
+ax.set_ylabel('Accuracy', font_other)
+ax.set_title('Accuracy in different voxel selection method', font_title)
+
+plt.xticks((x_1 + x_2)/2, labels,
+           fontproperties='arial', weight='bold', size=10)
+plt.yticks(fontproperties='arial', weight='bold', size=10)
+plt.legend(prop=font_other, loc='best')
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_linewidth(1.5)
+ax.spines['left'].set_linewidth(1.5)
+
+ax.set_ylim(0,0.7)
+
+ax.set_xlim(-1.5,7)
+plt.plot([-1.5,7], [0.1, 0.1], ls='--', color='gray', lw=1.5)
+
+plt.savefig(pjoin(out_path, 'acc_voxel_selection.jpg'))
+plt.close()
+
+#%% binary classification in different mean times
+
+import matplotlib.pyplot as plt
+import numpy as np
+from os.path import join as pjoin
+
+main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
+out_path = pjoin(main_path, 'imagenet_decoding', 'results')
+
+labels = ['single_trial','mean_2','mean_3','mean_4',
+          'mean_5','mean_6','mean_7','mean_8']
+rect1_acc = [0.771, 0.778, 0.858, 0.890, 0.921, 0.925, 0.949, 0.950]
+rect1_std = [0.002, 0.003, 0.004, 0.003, 0.004, 0.006, 0.005, 0.007]
+
+rect2_acc = [0.799, 0.797, 0.882, 0.906, 0.936, 0.951, 0.966, 0.975]
+rect2_std = [0.002, 0.003, 0.004, 0.003, 0.003, 0.004, 0.006, 0.001]
+
+x_1 = 3*np.arange(len(rect1_acc))
+x_2 = x_1 + 0.8
+font_title = {'family': 'arial', 'weight': 'bold', 'size':20}
+font_other = {'family': 'arial', 'weight': 'bold', 'size':8}
+font_legend = {'family': 'arial', 'weight': 'bold', 'size':14}
+
+plt.figure(figsize=(15, 10))
+
+plt.bar(x_1, rect1_acc, label='sub-02', color='#F54748')
+plt.bar(x_2, rect2_acc, label='sub-03', color='#0A81AB')
+
+plt.errorbar(x_1, rect1_acc, rect1_std, color='black', ls='none', capsize=3)
+plt.errorbar(x_2, rect2_acc, rect2_std, color='black', ls='none', capsize=3)
+
+for x, y, a, b in zip(x_1, rect1_acc, x_2, rect2_acc):
+    plt.text(x, y+0.008, y, font_other, ha='center', va='bottom')
+    plt.text(a, b+0.008, b, font_other, ha='center', va='bottom')
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax = plt.gca()
+ax.set_ylabel('Accuracy', font_title)
+ax.set_title('Accuracy of different mean times in binary classification', font_title)
+
+plt.xticks((x_1 + x_2)/2, labels,
+           fontproperties='arial', weight='bold', size=14)
+plt.yticks(fontproperties='arial', weight='bold', size=14)
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_linewidth(1.5)
+ax.spines['left'].set_linewidth(1.5)
+ax.set_ylim(0.5,1)
+ax.set_xlim(-2,24)
+
+## make twin axes
+ax2 = ax.twinx()
+test_sample = [288, 144, 96, 72, 57, 48, 41, 36]
+ax2.plot((x_1 + x_2)/2, test_sample, ls='--', marker='o', color='#002651',
+         label='n_sample in test set',)
+
+ax2.spines['top'].set_visible(False)
+ax2.spines['right'].set_linewidth(1.5)
+ax2.set_yticklabels(labels=np.linspace(0,300,7, dtype=int), fontdict=font_legend)
+ax2.set_ylabel('Num', font_title, )
+
+# merge legend in differnet axes
+lines, labels = ax.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+ax2.legend(lines+lines2, labels+labels2, loc='upper left', 
+           bbox_to_anchor=(0.01, 0.93), prop=font_legend)
+
+plt.savefig(pjoin(out_path, 'acc_binary.jpg'))
+plt.close()

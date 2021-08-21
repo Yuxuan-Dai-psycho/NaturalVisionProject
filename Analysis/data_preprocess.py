@@ -14,7 +14,6 @@ roi_name_path = pjoin(main_path, 'roilbl_mmp.csv')
 out_path = pjoin(main_path, 'imagenet_decoding')
 
 n_run = 40
-run_idx = np.repeat(np.linspace(0,n_run-1,n_run, dtype=int), 100)
 
 # network and roi
 network = sio.loadmat(network_path)['netassignments']
@@ -27,10 +26,14 @@ for sub_id in [2]:
     sub_core_name = 'sub-core{:02d}'.format(sub_id)
     data_path = pjoin(main_path, 'imagenet_decoding', f'{sub_core_name}_imagenet-beta.mat')
     label_path = pjoin(main_path, 'imagenet_decoding', f'{sub_core_name}_imagenet-label.npy')
+    animacy_label_path = pjoin(main_path, 'imagenet_decoding', f'{sub_core_name}_animate-label.npy')
     
     # data, label and run_idx
     data_raw = sio.loadmat(data_path)['response']
     label = np.load(label_path)
+    animacy_label = np.load(animacy_label_path).squeeze()
+    animacy_label = np.array([x+3 if x == -1 else x for x in animacy_label])
+    run_idx = np.repeat(np.linspace(0,n_run-1,n_run, dtype=int), 100)
     
     # define select class and roi
     class_selected = [1, 6, 8, 9, 16, 18, 19, 
@@ -42,7 +45,7 @@ for sub_id in [2]:
     voxel_selected = np.asarray([True if x in roi_index else False for x in roi[0]])
     print(f'Select {voxel_selected.sum()} voxels')
     data = data_raw[class_loc, :roi.shape[1]]
-    # data = data[:, voxel_selected]
+    data = data[:, voxel_selected]
     run_idx = run_idx[class_loc]
     del data_raw
     
@@ -51,24 +54,20 @@ for sub_id in [2]:
     data_scale = np.zeros(data.shape)
     for idx in range(n_run):
         tmp_data = data[run_idx==idx, :]
-        # scale on row, based on all run info
-        # mean_pattern = np.mean(tmp_data, axis=0)
-        # for idx_scale in range(tmp_data.shape[0]):
-        #     tmp_data[idx_scale] = (tmp_data[idx_scale] - np.mean(mean_pattern)) / np.std(mean_pattern)
         # scale on column, based on feature
         tmp_data = scaler.fit_transform(tmp_data)
         # fill data
         data_scale[run_idx==idx, :] = tmp_data
     
     # label and run_idx
-    label_all = np.zeros((data.shape[0], 2))
+    label_all = np.zeros((data.shape[0], 3))
     label_all[:, 0] = label[class_loc]
     label_all[:, 1] = run_idx
-    
-    # save data
-    np.save(pjoin(main_path, 'imagenet_decoding', 'voxel', f'{sub_name}_imagenet-beta-whole_brain.npy'), data_scale)
-    np.save(pjoin(main_path, 'imagenet_decoding', 'voxel', f'{sub_name}_imagenet-label-num_prior.npy'), label_all)
+    label_all[:, 2] = animacy_label[class_loc]
 
+    # save data
+    np.save(pjoin(main_path, 'imagenet_decoding', 'ica', f'{sub_name}_imagenet-beta.npy'), data_scale)
+    np.save(pjoin(main_path, 'imagenet_decoding', 'ica', f'{sub_name}_imagenet-label-num_prior.npy'), label_all)
 
 #%% select class based on distance
 
@@ -387,57 +386,6 @@ plt.ylabel('distance', font_other)
 plt.title('Euclidean distance of different class', font_title)
 plt.savefig(pjoin(out_path, 'distance_bar.jpg'), bbox_inches='tight')
 plt.close()
-
-
-#%% plot acc comparasion hist
-
-
-import matplotlib.pyplot as plt
-import numpy as np
-from os.path import join as pjoin
-import matplotlib.font_manager
-
-main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
-out_path = pjoin(main_path, 'imagenet_decoding', 'results')
-
-labels = ['all_sample', 'same_sample']
-rect1_acc = [0.465, 0.375]
-rect2_acc = [0.528, 0.537]
-
-x_1 = 3*np.arange(len(rect1_acc))
-x_2 = x_1 + 0.8
-font = {'family': 'arial', 'weight': 'bold', 'size':12}
-
-plt.figure(figsize=(10, 6))
-plt.bar(x_1, rect1_acc, label='single_trial', color='#F54748')
-plt.bar(x_2, rect2_acc, label='mean_pattern', color='#0A81AB')
-plt.plot([-1, 5], [0.1, 0.1], ls='--', color='gray', lw=1.5)
-
-for x, y, a, b in zip(x_1, rect1_acc, x_2, rect2_acc):
-    plt.text(x, y+0.01, y, font, ha='center', va='bottom')
-    plt.text(a, b+0.01, b, font, ha='center', va='bottom')
-# Add some text for labels, title and custom x-axis tick labels, etc.
-ax = plt.gca()
-ax.set_ylabel('Accuracy', font)
-ax.set_title('Accuracy in different sample method', font)
-
-plt.xticks((x_1 + x_2)/2, labels,
-           fontproperties='arial', weight='bold', size=12)
-plt.yticks(fontproperties='arial', weight='bold', size=12)
-plt.legend(prop=font, loc='best')
-
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-ax.spines['bottom'].set_linewidth(1.5)
-ax.spines['left'].set_linewidth(1.5)
-
-ax.set_ylim(0,0.7)
-ax.set_xlim(-1,5)
-plt.savefig(pjoin(out_path, 'acc_sample.jpg'))
-plt.close()
-
-
-
 
 
 
