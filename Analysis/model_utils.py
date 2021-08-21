@@ -12,21 +12,19 @@ from sklearn.decomposition import PCA
 from sklearn.covariance import EllipticEnvelope
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression, Lasso
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectPercentile
+from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix, classification_report
 
 
-def plot_confusion_matrix(y_test, y_pred, specify):
+def plot_confusion_matrix(confusion, class_name, specify):
     """
 
     Parameters
     ----------
-    y_test : ndarray
-        Groundtruth class 
-    y_pred : ndarray
-        Class predicted by model
     specify : str
         Name to specify this plot
 
@@ -36,7 +34,6 @@ def plot_confusion_matrix(y_test, y_pred, specify):
         os.makedirs(out_path)
 
     # get confusion
-    confusion = confusion_matrix(y_test, y_pred, normalize='true')
     n_class = confusion.shape[0]
     # visualize
     cmap = plt.cm.jet
@@ -48,9 +45,9 @@ def plot_confusion_matrix(y_test, y_pred, specify):
     
     plt.xlabel('Predict label', font)
     plt.ylabel('True label', font)
-    plt.xticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test).astype(int),
+    plt.xticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), class_name.astype(int),
                 fontproperties='arial', weight='bold', size=10)
-    plt.yticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), np.unique(y_test).astype(int),
+    plt.yticks(np.linspace(0, n_class-1, n_class, dtype=np.uint8), class_name.astype(int),
                 fontproperties='arial', weight='bold', size=10)
     plt.title(f'Confusion matrix {specify}', font)
     plt.savefig(pjoin(out_path, f'confusion_{specify}.jpg'))
@@ -105,26 +102,43 @@ def top_k_acc(X_probs, y_test, k):
     return  acc_top_k
 
 def nested_cv(X, y, groups, Classifier, param_grid=None, k=1, grid_search=False,
-              groupby='group_run', sess=None, postprocess=False):
+              groupby=None, sess=None, mean_times=None,
+              postprocess=False, feature_selection=None):
     """
     Nested Cross validation with fMRI fold
 
     Parameters
     ----------
-    X : ndarray
-        DESCRIPTION.
-    y : ndarray
-        DESCRIPTION.
+    X : array-like of shape(n_samples, n_feautre)
+        Training vectors
+    y : array-like of shape(n_samples,)
+        Target values(class label in classification)
     groups : ndarray
-        DESCRIPTION.
-    Classifier : sklearn classifier
-        DESCRIPTION.
+        Groups to constrain the cross-validation. We usually use run_idx in fMRI fold.
+    Classifier : sklearn classifier object
+        Sklearn classifier.
     param_grid : dict
-        DESCRIPTION.
+        Parameters info in corresponding classifier.
+    k : int
+        Top k acc. Different k will have different chance level.
+    grid_search : bool
+        if True, the cv will start grid searching based on param_grid
     groupby : str, optional
-        DESCRIPTION. The default is 'group_run'.
+        Define the cross validtion in which groups.
+        The choices are group_run, single_sess and group_sess
+        In group_run, the test set will be 4 runs randomly selected from different session
+        In single_sess, the train set and test set are using one session data. Note to assign the 
+            the sess value if using the single_ses group_by
+        In group_sess, the test set will be 1 session randomly selected
     sess : int, optional
-        DESCRIPTION. The default is None.
+        Define the session number when groupby is single_sess. The default is None.
+    mean_times : int
+        Define the mean times of test set sample in a same class.
+    postprocess : bool
+        if True, it will generate classification report and confusion_matrix.
+        Make sure to adjust the path in function plot_confusion_matrix and save_classification_report
+    feature_selection : int 
+        The percentage of feature selection in active-based voxel selction.
 
     Raises
     ------
@@ -133,14 +147,19 @@ def nested_cv(X, y, groups, Classifier, param_grid=None, k=1, grid_search=False,
 
     Returns
     -------
-    outer_scores_single : TYPE
-        DESCRIPTION.
-    outer_scores_mean : TYPE
-        DESCRIPTION.
-    best_params : TYPE
-        DESCRIPTION.
+    outer_scores_single : list
+        The score in single trial.
+    outer_scores_mean : list
+        The score in mean pattern.
+    best_params : list
+        Best params in grid searching.
 
     """
+    # define containers
+    outer_scores_mean = []
+    outer_scores_single = []
+    best_params = []
+
     # change groups 
     # group by sess fold, which contains 4 runs from different sess
     if groupby == 'group_run':
@@ -174,74 +193,101 @@ def nested_cv(X, y, groups, Classifier, param_grid=None, k=1, grid_search=False,
         print(X.shape)
         print(f'Nested CV on Sess{sess}')
         
-    # define groupcv
-    inner_cv = GroupKFold(n_splits = n_inner_cv)
-    outer_cv = GroupKFold(n_splits = n_outer_cv)
-    # define containers
-    outer_scores_mean = []
-    outer_scores_single = []
-    best_params = []
-
+    # select voxels highly responsive if desired
+    if feature_selection:
+        n_voxel_select = int(X.shape[1]*(feature_selection/100))
+        voxel_pattern = np.max(X, axis=0)
+        select_loc = np.argsort(-voxel_pattern)[:n_voxel_select]
+        X = X[:, select_loc]
+       
     # start cross validation
     split_index = 1
-    for train_index, test_index in outer_cv.split(X, y, groups=groups_new):
-        # split train test
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-        groups_cv = groups_new[train_index]
-        # in group_run and group_sess, the groups have the same shape but its' content is different
-        # as for single sess, the test index should correspond to groups_new
-        if groupby == 'single_sess':
-            run_test = groups_new[test_index]
-        else:
-            run_test = groups[test_index]
-        # transform mean pattern 
-        X_test_mean = np.zeros((1, X.shape[1]))
-        y_test_mean = []
-        for idx in np.unique(run_test):
-            tmp_X = X_test[run_test==idx, :]
-            tmp_y = y_test[run_test==idx]
-            for class_idx in np.unique(y):
-                if class_idx in tmp_y:
-                    class_loc = tmp_y == class_idx
-                    pattern = np.mean(tmp_X[class_loc], axis=0)[np.newaxis, :]
-                    X_test_mean = np.concatenate((X_test_mean, pattern), axis=0)
-                    y_test_mean.append(class_idx)
-        X_test_mean = np.delete(X_test_mean, 0, axis=0)
-        y_test_mean = np.array(y_test_mean)
-        # fit grid in inner loop
-        if grid_search:
-            model = GridSearchCV(Classifier, param_grid, cv=inner_cv, n_jobs=8, verbose=10)
-            model.fit(X_train, y_train, groups=groups_cv)
-            best_params.append(model.best_params_)
-        else:
-            model = Classifier
-            model.fit(X_train, y_train)
-        # handle specified situation on svm
-        if param_grid['classifier'][0].__class__.__name__ in ['SVC', 'Lasso'] or groupby == 'single_sess':
-            outer_scores_single.append(model.score(X_test, y_test))
-            outer_scores_mean.append(model.score(X_test_mean, y_test_mean))
-        else:
-            # get topk score
-            X_probs_mean = model.predict_proba(X_test_mean)
-            X_probs = model.predict_proba(X_test)
-            # test score in outer loop
-            outer_scores_single.append(top_k_acc(X_probs, y_test, k))
-            outer_scores_mean.append(top_k_acc(X_probs_mean, y_test_mean, k))
-        
-        if postprocess:
-            # postprocess: including confusion matrix, classification report
-            # predict
-            y_pred_mean = model.predict(X_test_mean)
-            y_pred = model.predict(X_test)
-            # plot and save info
-            plot_confusion_matrix(y_test_mean, y_pred_mean, f'mean_split{split_index}')
-            plot_confusion_matrix(y_test, y_pred, f'single_split{split_index}')
-            save_classification_report(y_test_mean, y_pred_mean, f'mean_split{split_index}')
-            save_classification_report(y_test, y_pred, f'single_split{split_index}')
+    class_name = np.unique(y)
+    confusion = np.zeros((10, class_name.shape[0], class_name.shape[0]))
+    # handle situation for not group cv
+    if groupby == None: 
+        model = Classifier
+        outer_scores_single = cross_val_score(model, X, y, cv=10)
+    else:
+        # define groupcv
+        inner_cv = GroupKFold(n_splits = n_inner_cv)
+        outer_cv = GroupKFold(n_splits = n_outer_cv)
+        # group cv
+        for train_index, test_index in outer_cv.split(X, y, groups=groups_new):
+            # split train test
+            X_train, X_test = X[train_index], X[test_index]
+            y_train, y_test = y[train_index], y[test_index]
+            groups_cv = groups_new[train_index]
+            # in group_run and group_sess, the groups have the same shape but its' content is different
+            # as for single sess, the test index should correspond to groups_new
+            if groupby == 'single_sess':
+                run_test = groups_new[test_index]
+            else:
+                run_test = groups[test_index]
+            # transform mean pattern 
+            X_test_mean = np.zeros((1, X.shape[1]))
+            y_test_mean = []
+            for idx in np.unique(run_test):
+                tmp_X = X_test[run_test==idx, :]
+                tmp_y = y_test[run_test==idx]
+                # loop to tranform mean pattern in each class
+                for class_idx in np.unique(y):
+                    if mean_times == None:
+                        # generate mean pattern for class in each run
+                        if class_idx in tmp_y:
+                            class_loc = tmp_y == class_idx
+                            pattern = np.mean(tmp_X[class_loc], axis=0)[np.newaxis, :]
+                            X_test_mean = np.concatenate((X_test_mean, pattern), axis=0)
+                            y_test_mean.append(class_idx)
+                    else:
+                        # generate mean pattern in specified times
+                        animacy_loc = tmp_y == class_idx
+                        animacy_X = tmp_X[animacy_loc, :]
+                        for mean_idx in range(int(animacy_X.shape[0]/mean_times)):
+                            pattern = np.mean(animacy_X[mean_idx*mean_times:(mean_idx+1)*mean_times-1], 
+                                              axis=0)[np.newaxis, :]
+                            X_test_mean = np.concatenate((X_test_mean, pattern), axis=0)
+                            y_test_mean.append(class_idx)
             
-        print(f'Finish cv in split{split_index}')
-        split_index += 1
+            X_test_mean = np.delete(X_test_mean, 0, axis=0)
+            y_test_mean = np.array(y_test_mean)
+            # fit grid in inner loop
+            if grid_search:
+                model = GridSearchCV(Classifier, param_grid, cv=inner_cv, n_jobs=8, verbose=10)
+                model.fit(X_train, y_train, groups=groups_cv)
+                best_params.append(model.best_params_)
+            else:
+                model = Classifier
+                model.fit(X_train, y_train)
+            # handle specified situation on svm
+            if param_grid['classifier'][0].__class__.__name__ in ['SVC', 'Lasso'] or groupby == 'single_sess':
+                outer_scores_single.append(model.score(X_test, y_test))
+                outer_scores_mean.append(model.score(X_test_mean, y_test_mean))
+            else:
+                # get topk score
+                X_probs_mean = model.predict_proba(X_test_mean)
+                X_probs = model.predict_proba(X_test)
+                # test score in outer loop
+                outer_scores_single.append(top_k_acc(X_probs, y_test, k))
+                outer_scores_mean.append(top_k_acc(X_probs_mean, y_test_mean, k))
+        
+            if postprocess:
+                # postprocess: including confusion matrix, classification report
+                # predict
+                y_pred_mean = model.predict(X_test_mean)
+                y_pred = model.predict(X_test)
+                # plot and save info
+                confusion[split_index-1] = confusion_matrix(y_test_mean, y_pred_mean, normalize='true')
+                save_classification_report(y_test_mean, y_pred_mean, f'mean_split{split_index}')
+                save_classification_report(y_test, y_pred, f'single_split{split_index}')
+                
+            print(f'Finish cv in split{split_index}')
+            split_index += 1
+            
+        if postprocess:
+            confusion = np.mean(confusion, axis=0)
+            plot_confusion_matrix(confusion, class_name, 'mean_pattern')
+
     return outer_scores_single, outer_scores_mean, best_params
         
 
@@ -334,13 +380,14 @@ def gen_param_grid(method):
                    {'classifier': [SVC(max_iter=8000)], 'feature_selection':[SelectPercentile()],
                     'classifier__C': [0.001],
                     'classifier__kernel': ['linear'],
+                    'classifier__decision_function_shape': ['ovo'],
                     'feature_selection__percentile': [25],},
                   'logistic':    
                       {'classifier': [LogisticRegression(max_iter=8000)], 
                        'feature_selection':[SelectPercentile()],
                        'classifier__C': [0.001],
                        'classifier__solver': ['liblinear'],
-                       'feature_selection__percentile': [10, 30, 50, 70, 100]},
+                       'feature_selection__percentile': [25],},
                   'rf':    
                       {'classifier': [RandomForestClassifier()], 'feature_selection':[SelectPercentile()],
                        'classifier__n_estimators': [500, 300, 200, ],
@@ -353,6 +400,11 @@ def gen_param_grid(method):
                   'lasso':    
                       {'classifier': [Lasso(max_iter=8000)],
                        'classifier__alpha': [0.001, 0.01, 0.1, 1],}, 
+                  'lda':    
+                   {'classifier': [LinearDiscriminantAnalysis()], 'feature_selection':[SelectPercentile()],
+                    'classifier__solver': ['lsqr'],
+                    'classifier__shrinkage': [0.9],
+                    'feature_selection__percentile': [25],},
                   }  
 
     return param_grid[method]            
