@@ -196,12 +196,12 @@ for voxel_idx in range(data.shape[1]):
     valid_value = np.triu(corr_matrix, 1).flatten()
     stability_score[voxel_idx] = np.mean(valid_value[valid_value!=0])
         
-stability_loc = np.argsort(stability_score)[:n_voxel_select]
-stability_idx = visual_all_idx[stability_loc]
-np.save(pjoin(main_path, 'imagenet_decoding', 'voxel', f'{sub_name}_imagenet-stability_idx.npy'), 
-        stability_idx)
-np.save(pjoin(main_path, 'imagenet_decoding', 'voxel', f'{sub_name}_imagenet-stability_score.npy'), 
-        stability_score)
+# stability_loc = np.argsort(stability_score)[:n_voxel_select]
+# stability_idx = visual_all_idx[stability_loc]
+# np.save(pjoin(main_path, 'imagenet_decoding', 'voxel', f'{sub_name}_imagenet-stability_idx.npy'), 
+#         stability_idx)
+# np.save(pjoin(main_path, 'imagenet_decoding', 'voxel', f'{sub_name}_imagenet-stability_score.npy'), 
+#         stability_score)
 
 # preprocessing on voxel selection
 # feature_selection = 25
@@ -210,11 +210,13 @@ np.save(pjoin(main_path, 'imagenet_decoding', 'voxel', f'{sub_name}_imagenet-sta
 #                           f'{sub_name}_imagenet-stability_score.npy'))
 # stability_loc = np.argsort(stability_score)[:n_voxel_select]
 # data = data[:, stability_loc]
-stability_idx = np.load(pjoin(main_path, 'imagenet_decoding', 'voxel', f'{sub_name}_imagenet-stability_idx.npy'))
-discrim_idx = np.load(pjoin(main_path, 'imagenet_decoding', 'voxel', f'{sub_name}_imagenet-visual_select_voxel.npy'))
 
-#%% prepare voxel and roi index info used in DNN 
+#%% prepare voxel and roi index info used in DNN structure
 import pickle as pkl
+from os.path import join as pjoin
+import scipy.io as sio
+import numpy as np
+import pandas as pd
 
 main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
 network_path = '/nfs/p1/atlases/ColeAnticevicNetPartition/cortex_parcel_network_assignments.mat'
@@ -235,15 +237,24 @@ voxel_selected = np.asarray([True if x in roi_index else False for x in roi[0]])
 
 # preprare saving data
 voxel_to_roi = roi.squeeze()[voxel_selected]
-roi_to_network = [x for idx,x in enumerate(network) if x in select_network]
+roi_to_network = np.array([x for idx,x in enumerate(network) if x in select_network])
+
+# prepare voxel_to_roi and roi_to_network mask
+voxel2roi_mask = np.zeros((voxel_to_roi.shape[0], len(np.unique(voxel_to_roi))))
+roi2network_mask = np.zeros((roi_to_network.shape[0], len(np.unique(roi_to_network))))
+
+for loop_idx, roi_idx in enumerate(np.unique(voxel_to_roi)):
+    voxel2roi_mask[:, loop_idx] = voxel_to_roi == roi_idx
+    
+for loop_idx, net_idx in enumerate(np.unique(roi_to_network)):
+    roi2network_mask[:, loop_idx] = roi_to_network == net_idx
 
 
-dnn_struct_info = {'voxel_to_roi': voxel_to_roi,
-                   'roi_to_network': roi_to_network}
+dnn_struct_info = {'voxel2roi_mask': voxel2roi_mask,
+                   'roi2network_mask': roi2network_mask}
 
 with open(pjoin(out_path, 'dnn_struct_info.pkl'), 'wb') as f:
     pkl.dump(dnn_struct_info, f)
-
 
 #%% visualize voxel
 import nibabel as nib
