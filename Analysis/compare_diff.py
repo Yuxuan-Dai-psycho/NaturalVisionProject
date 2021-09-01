@@ -5,7 +5,7 @@ import scipy.io as sio
 from sklearn.preprocessing import StandardScaler 
 
 
-#%% load data and label
+#%% Scale diff
 main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
 network_path = '/nfs/p1/atlases/ColeAnticevicNetPartition/cortex_parcel_network_assignments.mat'
 roi_path = pjoin(main_path, 'MMP_mpmLR32k.mat')
@@ -103,85 +103,4 @@ for method in methods:
     class_pattern = np.mean(class_pattern, axis=0)
     
     np.save(pjoin(main_path, 'imagenet_decoding', 'scale', f'{sub_name}_imagenet-class_pattern_{method}.npy'), class_pattern)
-
-
-#%%
-import numpy as np
-import pandas as pd
-from os.path import join as pjoin
-
-from scipy.spatial import distance_matrix
-from scipy.stats import pearsonr
-import matplotlib.pyplot as plt
-import matplotlib.font_manager
-
-
-main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
-out_path = pjoin(main_path, 'imagenet_decoding', 'results')
-class_selected = [1, 6, 8, 9, 12, 17, 
-                  21, 22, 24, 25]
-n_class = len(class_selected)
-
-# get class sample
-class_mapping = pd.read_csv(pjoin(main_path, 'superClassMapping.csv'))
-super_class_name, super_class_number = [], []
-for i in range(30):
-    superclass_df = class_mapping.loc[class_mapping['superClassID']==i+1, 'superClassName']
-    super_class_name.append("%d.%s" % (i+1, superclass_df.values[0]))
-    super_class_number.append(len(superclass_df))
-labels_selected = np.array(super_class_name)[np.array(class_selected)-1]
-
-methods = ['M1', 'M2', 'M2+M1', 'No_scale']
-eucl_distance = np.zeros((n_class, len(methods)))
-for idx,scale_name in enumerate(methods):
-    print(scale_name)
-    file_name = f'sub-03_imagenet-class_pattern_{scale_name}.npy'
-    # get Euclidean distance
-    class_pattern = np.load(pjoin(main_path, 'imagenet_decoding', 'scale', file_name))
-    eucl_matrix =  distance_matrix(class_pattern, class_pattern)
-    eucl_distance[:, idx] = np.mean(eucl_matrix, axis=0)
-
-x_1 = 3.5*np.arange(n_class)
-x_2 = x_1 + 0.8
-x_3 = x_1 - 0.8
-
-# for all sample
-plt.figure(figsize=(16,10))
-plt.bar(x_1, eucl_distance[:, 0], label='M1', color='#F54748')
-plt.bar(x_2, eucl_distance[:, 1], label='M2', color='#0A81AB')
-plt.bar(x_3, eucl_distance[:, 2], label='M2+M1', color='#7952B3')
-# plt.bar(x_4, eucl_distance[:, 3], label='No_scale', color='#0A81AB')
-
-font_title = {'family': 'arial', 'weight': 'bold', 'size':20}
-font_other = {'family': 'arial', 'weight': 'bold', 'size':16}
-ax = plt.gca()
-ax.spines['right'].set_visible(False)
-ax.spines['top'].set_visible(False)
-ax.spines['bottom'].set_linewidth(1.5)
-ax.spines['left'].set_linewidth(1.5)
-ax.set_ylim(0,25)
-
-plt.xticks((x_1 + x_2 + x_3)/3, labels_selected, rotation=45,
-           fontproperties='arial', weight='bold', size=12)
-plt.yticks(fontproperties='arial', weight='bold', size=12)
-plt.legend(prop=font_other)
-
-plt.ylabel('distance', font_other)
-plt.title('Euclidean distance in different scale method', font_title)
-plt.savefig(pjoin(out_path, 'distance_bar_scale.jpg'), bbox_inches='tight')
-plt.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

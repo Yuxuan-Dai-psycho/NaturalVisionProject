@@ -14,26 +14,26 @@ roi_name_path = pjoin(main_path, 'roilbl_mmp.csv')
 out_path = pjoin(main_path, 'imagenet_decoding')
 
 n_run = 40
-
+n_sess = 4
 # network and roi
 network = sio.loadmat(network_path)['netassignments']
 network = [x[0] for x in network]
 roi = sio.loadmat(roi_path)['glasser_MMP']
 roi_names = pd.read_csv(roi_name_path)
 
-for sub_id in [2]:
+for outer_idx,sub_id in enumerate([1,2,3,4,5,6,8,9,10]):
     sub_name = 'sub-{:02d}'.format(sub_id)
-    sub_core_name = 'sub-core{:02d}'.format(sub_id)
-    data_path = pjoin(main_path, 'imagenet_decoding', f'{sub_core_name}_imagenet-beta.mat')
-    label_path = pjoin(main_path, 'imagenet_decoding', f'{sub_core_name}_imagenet-label.npy')
-    animacy_label_path = pjoin(main_path, 'imagenet_decoding', f'{sub_core_name}_animate-label.npy')
+    data_path = pjoin(main_path, 'imagenet_decoding/data_tmp', f'{sub_name}_imagenet-beta.npy')
+    label_path = pjoin(main_path, 'imagenet_decoding/data_tmp', f'{sub_name}_imagenet-label.npy')
+    # animacy_label_path = pjoin(main_path, 'imagenet_decoding', f'{sub_core_name}_animate-label.npy')
     
     # data, label and run_idx
-    data_raw = sio.loadmat(data_path)['response']
+    data_raw = np.load(data_path)
     label = np.load(label_path)
-    animacy_label = np.load(animacy_label_path).squeeze()
-    animacy_label = np.array([x+3 if x == -1 else x for x in animacy_label])
+    # animacy_label = np.load(animacy_label_path).squeeze()
+    # animacy_label = np.array([x+3 if x == -1 else x for x in animacy_label])
     run_idx = np.repeat(np.linspace(0,n_run-1,n_run, dtype=int), 100)
+    sess_idx = np.repeat(np.linspace(0,n_sess-1,n_sess, dtype=int), 1000)
     
     # define select class and roi
     class_selected = [1, 6, 8, 9, 16, 18, 19, 
@@ -47,6 +47,7 @@ for sub_id in [2]:
     data = data_raw[class_loc, :roi.shape[1]]
     data = data[:, voxel_selected]
     run_idx = run_idx[class_loc]
+    sess_idx = sess_idx[class_loc]
     del data_raw
     
     # preprocess for scaling
@@ -60,14 +61,43 @@ for sub_id in [2]:
         data_scale[run_idx==idx, :] = tmp_data
     
     # label and run_idx
-    label_all = np.zeros((data.shape[0], 3))
+    label_all = np.zeros((data.shape[0], 4))
     label_all[:, 0] = label[class_loc]
     label_all[:, 1] = run_idx
-    label_all[:, 2] = animacy_label[class_loc]
+    label_all[:, 2] = sess_idx
+    label_all[:, 3] = np.repeat(outer_idx, data.shape[0])
+    # label_all[:, 2] = animacy_label[class_loc]
 
     # save data
     np.save(pjoin(main_path, 'imagenet_decoding', 'ica', f'{sub_name}_imagenet-beta.npy'), data_scale)
     np.save(pjoin(main_path, 'imagenet_decoding', 'ica', f'{sub_name}_imagenet-label-num_prior.npy'), label_all)
+    print(f'Finish {sub_name}')
+    
+#%% merge data from sub01-10
+main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
+data_all = np.zeros((1, 11031))
+label_all = np.zeros((1, 4))
+
+for idx,sub_id in enumerate([1,2,3,4,5,6,8,9,10]):
+    sub_name = 'sub-{:02d}'.format(sub_id)
+    data_path = pjoin(main_path, 'imagenet_decoding', 'ica', f'{sub_name}_imagenet-beta.npy')
+    label_path = pjoin(main_path, 'imagenet_decoding', 'ica', f'{sub_name}_imagenet-label-num_prior.npy')
+    # load data
+    data = np.load(data_path)
+    label = np.load(label_path)
+    # add serial number in label
+    label[:, 1] = label[:, 1] + 40*idx
+    label[:, 2] = label[:, 2] + 4*idx
+    # concatenate data
+    data_all = np.concatenate((data_all, data), axis=0)
+    label_all = np.concatenate((label_all, label), axis=0)
+    print(f'Finish {sub_name}')
+# delete first number
+data_all = np.delete(data_all, 0, axis=0)
+label_all = np.delete(label_all, 0, axis=0)
+# save data
+np.save(pjoin(main_path, 'imagenet_decoding', 'group', 'sub-01-10_imagenet-beta.npy'), data_all)
+np.save(pjoin(main_path, 'imagenet_decoding', 'group', 'sub-01-10_imagenet-label-num_prior.npy'), label_all)
 
 #%% select class based on distance
 

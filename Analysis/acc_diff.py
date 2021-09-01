@@ -340,7 +340,6 @@ plt.savefig(pjoin(out_path, 'acc_whole_brain.jpg'))
 plt.close()
 
 
-
 #%% roi diff
 
 import matplotlib.pyplot as plt
@@ -629,3 +628,103 @@ ax2.legend(lines+lines2, labels+labels2, loc='upper left',
 
 plt.savefig(pjoin(out_path, 'acc_binary.jpg'))
 plt.close()
+
+#%% 10 subject decoding result
+import matplotlib.pyplot as plt
+import numpy as np
+from os.path import join as pjoin
+
+main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
+out_path = pjoin(main_path, 'imagenet_decoding', 'results')
+
+labels = ['sub-01', 'sub-02', 'sub-03', 'sub-04', 'sub-05', 'sub-06', 'sub-08', 'sub-09', 'sub-10']
+rect_acc = [0.601, 0.606, 0.652, 0.712, 0.654, 0.582, 0.673, 0.555, 0.544,]
+rect_std = [0.005, 0.006, 0.006, 0.008, 0.007, 0.010, 0.006, 0.009, 0.010,]
+
+
+x_1 = 1.5*np.arange(len(rect_acc))
+
+font_title = {'family': 'arial', 'weight': 'bold', 'size':16}
+font_other = {'family': 'arial', 'weight': 'bold', 'size':12}
+font_text = {'family': 'arial', 'weight': 'bold', 'size':10}
+
+plt.figure(figsize=(10, 7))
+plt.bar(x_1, rect_acc, color='#0A81AB', width=0.6)
+plt.errorbar(x_1, rect_acc, rect_std, color='black', ls='none', capsize=3)
+
+for x, y in zip(x_1, rect_acc):
+    plt.text(x, y+0.02, y, font_text, ha='center', va='bottom')
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax = plt.gca()
+ax.set_ylabel('Accuracy', font_other)
+ax.set_title('Accuracy within subject', font_title)
+
+plt.xticks(x_1, labels, fontproperties='arial', weight='bold', size=12)
+plt.yticks(fontproperties='arial', weight='bold', size=12)
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_linewidth(1.5)
+ax.spines['left'].set_linewidth(1.5)
+
+ax.set_ylim(0,0.8)
+
+ax.set_xlim(-1, 13)
+plt.plot([-1, 13], [0.1, 0.1], ls='--', color='gray', lw=1.5)
+
+plt.savefig(pjoin(out_path, 'acc_within_sub.jpg'))
+plt.close()
+
+#%% 10 sub decoding result asscioate with cv method
+import matplotlib.pyplot as plt
+import numpy as np
+from os.path import join as pjoin
+
+main_path = '/nfs/m1/BrainImageNet/Analysis_results/'
+out_path = pjoin(main_path, 'imagenet_decoding', 'results')
+
+labels = ['group_run', 'group_sess', 'group_sub']
+rect1_acc = [0.279, 0.280, 0.242]
+rect1_std = [0.001, 0.002, 0.001]
+
+rect2_acc = [0.449, 0.887, 0.922]
+rect2_std = [0.003, 0.012, 0.001]
+
+x_1 = 2.5*np.arange(len(rect1_acc))
+x_2 = x_1 + 0.8
+font_title = {'family': 'arial', 'weight': 'bold', 'size':14}
+font_other = {'family': 'arial', 'weight': 'bold', 'size':10}
+
+plt.figure(figsize=(10, 7))
+plt.bar(x_1, rect1_acc, label='single_trial', color='#F54748')
+plt.bar(x_2, rect2_acc, label='mean_pattern', color='#0A81AB')
+
+plt.errorbar(x_1, rect1_acc, rect1_std, color='black', ls='none', capsize=3)
+plt.errorbar(x_2, rect2_acc, rect2_std, color='black', ls='none', capsize=3)
+
+for x, y, a, b in zip(x_1, rect1_acc, x_2, rect2_acc):
+    plt.text(x, y+0.015, y, font_other, ha='center', va='bottom')
+    plt.text(a, b+0.015, b, font_other, ha='center', va='bottom')
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax = plt.gca()
+ax.set_ylabel('Accuracy', font_other)
+ax.set_title('Accuracy across subject using different cv', font_title)
+
+plt.xticks((x_1 + x_2)/2, labels,
+           fontproperties='arial', weight='bold', size=10)
+plt.yticks(fontproperties='arial', weight='bold', size=10)
+plt.legend(prop=font_other, loc='best')
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_linewidth(1.5)
+ax.spines['left'].set_linewidth(1.5)
+
+ax.set_ylim(0,1.0)
+
+ax.set_xlim(-1.5,7)
+plt.plot([-1.5,7], [0.1, 0.1], ls='--', color='gray', lw=1.5)
+
+plt.savefig(pjoin(out_path, 'acc_across_cv.jpg'))
+plt.close()
+
