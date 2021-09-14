@@ -21,7 +21,73 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectPercentile
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix, classification_report, pairwise_distances
+from torch.utils.data import DataLoader
+from torch import optim
 
+
+def plot_training_curve(n_epoch, train_acc, train_loss, val_acc, val_loss, flag):
+    """
+    
+
+    Parameters
+    ----------
+    n_epoch : TYPE
+        DESCRIPTION.
+    train_acc : TYPE
+        DESCRIPTION.
+    train_loss : TYPE
+        DESCRIPTION.
+    val_acc : TYPE
+        DESCRIPTION.
+    val_loss : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    font_title = {'family': 'arial', 'weight': 'bold', 'size':14}
+    font_other = {'family': 'arial', 'weight': 'bold', 'size':10}
+    plt.figure(figsize=(10,4))
+    # loss pic
+    plt.subplot(1,2,1)
+    plt.title("Training Curve")
+    plt.plot(range(n_epoch), train_loss, label="Train")
+    plt.plot(range(n_epoch), val_loss, label="Validation")
+    plt.xticks(fontproperties='arial', weight='bold', size=10)
+    plt.yticks(fontproperties='arial', weight='bold', size=10)
+    plt.legend(prop=font_other, loc='best')
+    
+    ax = plt.gca()
+    ax.set_xlabel('Iterations', font_other)
+    ax.set_ylabel('Loss', font_other)
+    ax.set_title('Training Curve', font_title)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_linewidth(1.5)
+    ax.spines['left'].set_linewidth(1.5)
+       
+    # acc pic
+    plt.subplot(1,2,2)
+    plt.plot(range(n_epoch), train_acc, label="Train")
+    plt.plot(range(n_epoch), val_acc, label="Validation")
+    plt.plot([-1,n_epoch], [0.1, 0.1], ls='--', color='gray', lw=1.5)
+    plt.xticks(fontproperties='arial', weight='bold', size=10)
+    plt.yticks(fontproperties='arial', weight='bold', size=10)
+    plt.legend(prop=font_other, loc='best')
+    
+    ax = plt.gca()
+    ax.set_xlabel('Iterations', font_other)
+    ax.set_ylabel('Training Accuracy', font_other)
+    ax.set_title('Training Curve', font_title)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_linewidth(1.5)
+    ax.spines['left'].set_linewidth(1.5)
+    plt.savefig(pjoin('/nfs/z1/zhenlab/BrainImageNet/Analysis_results/imagenet_decoding/results', 
+                      f'training_curve_{flag}.jpg'))
+    plt.close()
 
 def plot_confusion_matrix(confusion, class_name, specify):
     """
@@ -32,7 +98,7 @@ def plot_confusion_matrix(confusion, class_name, specify):
         Name to specify this plot
 
     """
-    out_path = '/nfs/m1/BrainImageNet/Analysis_results/imagenet_decoding/results/confusion_matrix'
+    out_path = '/nfs/z1/zhenlab/BrainImageNet/Analysis_results/imagenet_decoding/results/confusion_matrix'
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
@@ -70,7 +136,7 @@ def save_classification_report(y_test, y_pred, specify):
         Name to specify this plot
 
     """
-    out_path = '/nfs/m1/BrainImageNet/Analysis_results/imagenet_decoding/results/classification_report'
+    out_path = '/nfs/z1/zhenlab/BrainImageNet/Analysis_results/imagenet_decoding/results/classification_report'
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     # generate report
@@ -106,7 +172,7 @@ def top_k_acc(X_probs, y_test, k):
 
 def voxel_selection(X, y, groups, method='stability', percentage=30):
     """
-    
+    Select voxels based on pattern stability
 
     Parameters
     ----------
@@ -327,7 +393,6 @@ def nested_cv(X, y, groups, Classifier, param_grid=None, k=1, grid_search=False,
                 outer_scores_mean.append(model.score(X_test_mean, y_test_mean))
             else:
                 # get topk score
-                print(f'Test samples in mean pattern:{y_test_mean.shape[0]}')
                 X_probs_mean = model.predict_proba(X_test_mean)
                 X_probs = model.predict_proba(X_test)
                 # test score in outer loop
@@ -472,6 +537,27 @@ def gen_param_grid(method):
 
     return param_grid[method]            
 
+def compute_acc(y_truth, y_pred):
+    """
+    
+
+    Parameters
+    ----------
+    y_truth : TYPE
+        DESCRIPTION.
+    y_pred : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    predict_label = (torch.max(y_pred,1)[1]).data.numpy()        
+    target_label = y_truth.data.numpy()
+    acc = sum(predict_label == target_label)/y_truth.shape[0]
+    return acc
+
 
 # Define custome autograd function for masked connection.
 
@@ -584,4 +670,123 @@ class CustomizedLinear(nn.Module):
             self.input_features, self.output_features, self.bias is not None
         )
 
+class Dataset(torch.utils.data.Dataset):
+    "dataset iter"
+    def __init__(self, data, labels):
+        self.data = data
+        # make sure that label is in the range [0, n_class-1]
+        class_idx = np.unique(labels)
+        if (class_idx.min() != 0) | (class_idx.max() != class_idx.shape[0]-1):
+            labels_new = np.zeros((labels.shape))
+            for loop_idx, idx in enumerate(class_idx):
+                labels_new[labels==idx] = loop_idx
+        else:
+            labels_new = labels
+        self.labels = labels_new
+        
+    def __len__(self):
+        "get num of data"
+        return self.labels.shape[0]
+    
+    def __getitem__(self, index):
+        ""
+        
+        # get target data and label
+        X = torch.tensor(self.data[index]).type(torch.FloatTensor)
+        y = torch.tensor(self.labels[index]).type(torch.LongTensor)
+        return X, y
+
+def train(model, train_set, val_set, batch_size, n_epoch, lr, weight_decay,
+          verbose=False):
+    """
+    
+
+    Parameters
+    ----------
+    model : TYPE
+        DESCRIPTION.
+    train_set : Dataset object
+        DESCRIPTION.
+    val_set : Dataset object
+        DESCRIPTION.
+    batch_size : int
+        DESCRIPTION.
+    n_epoch : int
+        DESCRIPTION.
+    lr : float
+        DESCRIPTION.
+    weight_decay : float
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(filter(lambda p:p.requires_grad,
+                                  model.parameters()), lr=lr, weight_decay=weight_decay)
+    train_loader = DataLoader(train_set, batch_size=batch_size, drop_last=True)
+    val_loader = DataLoader(val_set, batch_size=batch_size, drop_last=True)
+    train_acc, train_loss, val_acc, val_loss = [], [], [], []
+    # backward pass
+    for t in range(n_epoch):
+        model.train()
+        train_acc_epoch, train_loss_epoch = [], []
+        print('======Start Epoch:{:0>2d}/{:0>2d}======'.format(t+1, n_epoch))
+        for idx_batch, train_data in enumerate(train_loader, 0):
+            X_train, y_train = train_data
+            # forward
+            y_pred = model(X_train)
+            # backward and update the params
+            loss = criterion(y_pred, y_train)
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+        # # Check grad
+        # with torch.no_grad():
+        #     for param in model.parameters():
+        #         # mask is also saved in param, but mask.requires_grad=False
+        #         # if param.requires_grad: 
+        #             # param -= lr * param.grad
+        #             # check masked param.grad
+        #         if np.array(param.grad).size == 11031*71:
+        #             print('masked weight')
+        #             print(param.t()[8:20, 34:37])
+        #             print('masked grad of weight')
+        #             print(param.grad.t()[8:20, 34:37])
+                            
+            # report acc and loss
+            train_acc_epoch.append(compute_acc(y_train, y_pred))
+            train_loss_epoch.append(loss.item())
+            if verbose:
+                print("Idx_train_epoch: {:0>2d}/{:0>2d}.. ".format(t+1, n_epoch),
+                      "Idx_train_batch: {:0>4d}/{:0>4d}.. ".format(idx_batch+1, len(train_loader)),
+                      "Loss: {:.3f}.. ".format(loss.item()))
+        train_acc.append(np.array(train_acc_epoch).mean())
+        train_loss.append(np.array(train_loss_epoch).mean())
+        print("Training  : Accuracy: {:.3f}; Loss: {:.3f}".format(
+            np.array(train_acc_epoch).mean(), np.array(train_loss_epoch).mean()))    
+            
+        # for validation  
+        with torch.no_grad():
+            model.eval() 
+            val_acc_epoch, val_loss_epoch = [], []
+            for idx_batch, val_data in enumerate(val_loader, 0):
+                X_val, y_val = val_data
+                y_pred = model(X_val)
+                loss = criterion(y_pred, y_val)
+                # report acc and loss
+                val_acc_epoch.append(compute_acc(y_val, y_pred))
+                val_loss_epoch.append(loss.item())
+                if verbose:
+                    print("Idx_val_epoch: {:0>2d}/{:0>2d}.. ".format(t+1, n_epoch),
+                          "Idx_val_batch: {:0>3d}/{:0>3d}.. ".format(idx_batch+1, len(val_loader)),
+                          "Loss: {:.3f}.. ".format(loss.item()))
+            val_acc.append(np.array(val_acc_epoch).mean())
+            val_loss.append(np.array(val_loss_epoch).mean())
+            print("Validation: Accuracy: {:.3f}; Loss: {:.3f}\n".format(
+                np.array(val_acc_epoch).mean(), np.array(val_loss_epoch).mean()))
+        
+    return model.state_dict(), train_acc, train_loss, val_acc, val_loss
 
