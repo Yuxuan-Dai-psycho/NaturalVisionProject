@@ -15,13 +15,9 @@ if ~ismember(sessID, 1:4), error('sessID is a integer within [1:4]!');end
 % Check run id
 if ~ismember(runID, 1:12), error('runID is a integer within [1:12]!'); end
 nRun = 12;
-nRepeat = nRun/3; % repeat time of classes in one session
+nTrial = 60; 
 nClass = 180;
-
-% Check continued subject id
-% continuedSubID = []; % complete it after the first part experiment.
-% if (sessID > 1) && (~ismember(subID, continuedSubID))
-%     error(['subID is not in continuedID within ' mat2str(continuedSubID)]); end
+nRepeat = nRun/(nClass/nTrial); % repeat time of classes in one session
 
 %% Data dir
 % Make work dir
@@ -54,7 +50,7 @@ if runID > 1
 end
 Screen('Preference','VisualDebugLevel',4);
 Screen('Preference','SuppressAllWarnings',1);
-bkgColor = [128 128 128]; % For no specific reason, set median of 255 
+bkgColor = [0.485, 0.456, 0.406] * 255; % ImageNet mean intensity
 screenNumber = max(Screen('Screens'));% Set the screen to the secondary monitor
 [wptr, rect] = Screen('OpenWindow', screenNumber, bkgColor);
 [xCenter, yCenter] = RectCenter(rect);% the centre coordinate of the wptr in pixels
@@ -96,8 +92,6 @@ designFile = fullfile(sessDir,...
     sprintf('sub%02d_sess%02d_design.mat',subID,sessID));
 if ~exist(designFile,'file')
     load(fullfile(designDir,'action.mat'),'action');
-%     if sessID == 1, sess = subID; % For the first part experiment.
-%     else, sess = 30 + 3*(find(continuedSubID==subID)-1) + sessID-1; end
     sess = 4*(subID-1)+ sessID;
     % prepare stimulus order and onset info
     sessPar = squeeze(action.paradigmClass(:,sess,:));
@@ -110,9 +104,9 @@ if ~exist(designFile,'file')
         sessStim(:,r) = sessStim(classOrder(:,r), r);
         sessClass(:,r) = action.className(classOrder(:,r));
     end
-    sessStim = reshape(sessStim,[nClass/3,nRun]);
-    sessClass = reshape(sessClass, [nClass/3,nRun]);
-    sessPar = reshape(sessPar,[nClass/3,nRun,3]);
+    sessStim = reshape(sessStim,[nTrial,nRun]);
+    sessClass = reshape(sessClass, [nTrial,nRun]);
+    sessPar = reshape(sessPar,[nTrial,nRun,3]);
     save(designFile,'sessStim','sessPar','sessClass');
 end
 
@@ -132,9 +126,10 @@ trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 %% Load stimulus and instruction
 % Load stimuli
 stimDir = fullfile(workDir,'stimulus', 'video');
-videoPath = cell(nStim,1);
+mvPtr = cell(nStim,1);
 for t = 1:nStim
-    videoPath{t} = fullfile(stimDir, runClass{t}, runStim{t});
+    videoPath = fullfile(stimDir, runClass{t}, runStim{t});
+    mvPtr{t} = Screen('OpenMovie', wptr, videoPath);
 end
 
 % Load  instruction
@@ -171,19 +166,17 @@ while true
 end
 
 %% Run experiment
-flipInterval = Screen('GetFlipInterval', wptr);  % get dur of frame
-onDur = 2 - 0.5*flipInterval; % on duration for a stimulus
-runDur = 300; % duration for a run
-beginDur = 6; % beigining fixation duration
-endDur = 6; % ending fixation duration
-fixOuterColor = [0 0 0]; % color of fixation circular ring
-fixInnerColor = [255 255 255]; % color of fixation circular point
+runDur = 288; % duration for a run
+beginDur = 12; % beigining fixation duration
+endDur = 12; % ending fixation duration
+fixColor = [0 0 0; 255 255 255]'; % color of fixation 
+fixCenter = [xCenter, yCenter; xCenter, yCenter]';
+fixSize = [fixOuterSize, fixInnerSize];
 tEnd = [trial(2:end, 1);runDur]; % make sequence of tEnd
 if Test == 1, beginDur = 1;end  % test part
 
 % Show begining fixation
-Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
+Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
 Screen('DrawingFinished',wptr);
 Screen('Flip',wptr);
 WaitSecs(beginDur);
@@ -191,27 +184,26 @@ WaitSecs(beginDur);
 % Show stimulus
 tStart = GetSecs;
 for t = 1:nTrial
-    % Show stimulus with fixation
-    mvPtr = Screen('OpenMovie', wptr, videoPath{t});
-    Screen('PlayMovie', mvPtr, 1); % 1 means the normal speed    
-    tStim = GetSecs;
-    trial(t, 6) = tStim - tStart; % record the real present time
+    % Start playback engine
+    Screen('PlayMovie', mvPtr{t}, 1); % 1 means the normal speed    
     
     % If subject responds in stimulus presenting, we record it
     key = 0; rt = 0;
     while KbCheck(), end % empty the key buffer
-    while GetSecs - tStim < onDur
+    frameIndex = 0; % Calculate the index of present frame
+    while true 
         % Draw movie frame
-        tex = Screen('GetMovieImage', wptr, mvPtr);
+        tex = Screen('GetMovieImage', wptr, mvPtr{t});
         if tex <= 0, break; end    % End of movie. break out of loop.
         
-        % Draw fixation on the screen
+        % Draw stimulus and fixation on the screen
         Screen('DrawTexture', wptr, tex, [], dsRect);
-        Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-        Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
-        Screen('DrawingFinished',wptr);
-        Screen('Flip', wptr);
-        Screen('Close', tex)
+        Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
+        Screen('DrawingFinished', wptr);
+        tStim = Screen('Flip', wptr);
+        if frameIndex == 0, trial(t, 6) = tStim - tStart; end % record the real present time
+        Screen('Close', tex);
+        frameIndex = frameIndex + 1;
         
         % Wait response
         [keyIsDown, tKey, keyCode] = KbCheck();
@@ -219,7 +211,7 @@ for t = 1:nTrial
             if keyCode(escKey),sca; return; 
             elseif keyCode(sportsKey1) || keyCode(sportsKey2)
                 key = 1; rt = tKey - tStim;
-            elseif keyCode(notSportsKey1)|| keyCode(notSportsKey2)
+            elseif keyCode(notSportsKey1) || keyCode(notSportsKey2)
                 key = -1; rt = tKey - tStim;
             end
         end
@@ -227,12 +219,11 @@ for t = 1:nTrial
     
     % Close movie
     trial(t, 7) = GetSecs - tStart; % record the real finish time
-    Screen('PlayMovie', mvPtr, 0); % 0 means stop playing
-    Screen('CloseMovie', mvPtr); % close movie file
+    Screen('PlayMovie', mvPtr{t}, 0); % 0 means stop playing
+    Screen('CloseMovie', mvPtr{t}); % close movie file
         
     % Show fixation
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixOuterSize, fixOuterColor, [], 2);
-    Screen('DrawDots', wptr, [xCenter,yCenter], fixInnerSize, fixInnerColor ,[], 2);
+    Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
     Screen('DrawingFinished',wptr);
     Screen('Flip', wptr);
     
@@ -275,6 +266,28 @@ WaitSecs(2);
 ShowCursor;
 Screen('CloseAll');
 
+%% Evaluate the response
+load(fullfile(designDir,'sports_or_not.mat'),'sports_label');
+% trial, nTial * 7 array;  % [onset, class, dur, key, RT, realTimePresent, realTimeFinish]
+% Make target matrix nTrial x nCond
+target = zeros(nTrial,2);
+sports_label = sports_label(trial(:,2));
+target(:,1) = sports_label == 1;
+target(:,2) = sports_label == -1;
+
+% Make response matrix nTrial x nCond
+response = zeros(nTrial,2);
+response(:,1) = trial(:,4) == 1;
+response(:,2) = trial(:,4) == -1;
+
+% Summarize the response with figure 
+responseEvaluation(target, response,{'Sports', 'Not-sports'});
+
+% Save figure
+figureFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%02d_run%02d.jpg',subID,sessID,runID));
+print(figureFile,'-djpeg');
+
 %% Save data for this run
 clear imgStart imgEnd
 resultFile = fullfile(sessDir,...
@@ -307,4 +320,29 @@ if Test == 1
     fprintf('Testing action HACS fMRI ---- DONE!\n')
 end
 
+function responseEvaluation(target,response,condName)
+% responseEvaluation(target,response,condName)
+% target, response,rt,condName
 
+idx = any(response,2);% only keep trial with response
+[cVal,cMat,~,cPer] = confusion(target(idx,:)',response(idx,:)');
+figure('Units','normalized','Position',[0 0 0.5 0.5])
+% subplot(1,2,1), 
+imagesc(cMat);
+title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));
+axis square
+set(gca,'Xtick',1:length(cMat), 'XTickLabel',condName,...
+    'Ytick',1:length(cMat),'YTickLabel',condName);
+colorbar
+text(0.75,1,sprintf('%.2f',cPer(1,3)),'FontSize',50,'Color','r');% hit
+text(0.75,2,sprintf('%.2f',cPer(1,1)),'FontSize',50,'Color','r');% miss
+text(1.75,1,sprintf('%.2f',cPer(1,2)),'FontSize',50,'Color','r');% false alarm
+text(1.75,2,sprintf('%.2f',cPer(1,4)),'FontSize',50,'Color','r');% corect reject
+
+% subplot(1,2,2), bar(cPer);
+% set(gca,'XTickLabel',condName);
+% ylabel('Rate')
+% axis square
+% legend({'Miss','False alarm','Hit','Correct reject'},...
+%    'Orientation','vertical' ,'Location','northeastoutside' )
+% legend boxoff
