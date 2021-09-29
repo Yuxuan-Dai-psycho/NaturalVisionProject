@@ -200,9 +200,9 @@ for t = 1:nTrial
         Screen('DrawTexture', wptr, tex, [], dsRect);
         Screen('DrawDots', wptr, fixCenter, fixSize, fixColor, [], 2);
         Screen('DrawingFinished', wptr);
+        Screen('Close', tex);
         tStim = Screen('Flip', wptr);
         if frameIndex == 0, trial(t, 6) = tStim - tStart; end % record the real present time
-        Screen('Close', tex);
         frameIndex = frameIndex + 1;
         
         % Wait response
@@ -266,28 +266,6 @@ WaitSecs(2);
 ShowCursor;
 Screen('CloseAll');
 
-%% Evaluate the response
-load(fullfile(designDir,'sports_or_not.mat'),'sports_label');
-% trial, nTial * 7 array;  % [onset, class, dur, key, RT, realTimePresent, realTimeFinish]
-% Make target matrix nTrial x nCond
-target = zeros(nTrial,2);
-sports_label = sports_label(trial(:,2));
-target(:,1) = sports_label == 1;
-target(:,2) = sports_label == -1;
-
-% Make response matrix nTrial x nCond
-response = zeros(nTrial,2);
-response(:,1) = trial(:,4) == 1;
-response(:,2) = trial(:,4) == -1;
-
-% Summarize the response with figure 
-responseEvaluation(target, response,{'Sports', 'Not-sports'});
-
-% Save figure
-figureFile = fullfile(sessDir,...
-    sprintf('sub%02d_sess%02d_run%02d.jpg',subID,sessID,runID));
-print(figureFile,'-djpeg');
-
 %% Save data for this run
 clear imgStart imgEnd
 resultFile = fullfile(sessDir,...
@@ -320,13 +298,35 @@ if Test == 1
     fprintf('Testing action HACS fMRI ---- DONE!\n')
 end
 
-function responseEvaluation(target,response,condName)
+%% Evaluate the response
+load(fullfile(designDir,'sports_or_not.mat'),'sports_label');
+% trial, nTial * 7 array;  % [onset, class, dur, key, RT, realTimePresent, realTimeFinish]
+% Make target matrix nTrial x nCond
+target = zeros(nTrial,2);
+sports_label = sports_label(trial(:,2));
+target(:,1) = sports_label == 1;
+target(:,2) = sports_label == -1;
+
+% Make response matrix nTrial x nCond
+response = zeros(nTrial,2);
+response(:,1) = trial(:,4) == 1;
+response(:,2) = trial(:,4) == -1;
+
+% Summarize the response with figure 
+handle = responseEvaluation(target, response,{'Sports', 'Not-sports'});
+
+% Save figure
+figureFile = fullfile(sessDir,...
+    sprintf('sub%02d_sess%02d_run%02d.jpg',subID,sessID,runID));
+saveas(handle, figureFile);
+
+function handle = responseEvaluation(target,response,condName)
 % responseEvaluation(target,response,condName)
 % target, response,rt,condName
 
 idx = any(response,2);% only keep trial with response
 [cVal,cMat,~,cPer] = confusion(target(idx,:)',response(idx,:)');
-figure('Units','normalized','Position',[0 0 0.5 0.5])
+handle = figure('Units','normalized','Position',[0 0 0.5 0.5]);
 % subplot(1,2,1), 
 imagesc(cMat);
 title(sprintf('RespProp = %.2f, Accuracy = %.2f',sum(idx)/length(target) ,1-cVal));
