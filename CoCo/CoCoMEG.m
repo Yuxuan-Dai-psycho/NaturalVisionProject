@@ -7,7 +7,7 @@ function trial = CoCoMEG(subID, sessID, runID)
 
 %% Check subject information
 % Check subject id
-if ~ismember(subID, 1:20), error('subID is a integer within [1:20]!'); end
+if ~ismember(subID, 1:20), error('subID is a integer within [1:10]!'); end
 % Check session id
 if ~ismember(sessID, 1:1), error('sessID is a integer within [1:1]!');end
 % Check run id

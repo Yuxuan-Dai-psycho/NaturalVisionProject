@@ -7,7 +7,6 @@ function trial = ImageNetMEG(subID,sessID, runID)
 % runID, run ID, integer [1-5]
 % workDir(or codeDir) -> sitmulus/instruciton/data 
 
-
 %% Check subject information
 % Check subject id
 if ~ismember(subID, 1:50), error('subID is a integer within [1:30]!'); end

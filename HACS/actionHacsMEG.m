@@ -35,8 +35,8 @@ workDir = pwd;
 dataDir = fullfile(workDir,'data');
 if ~exist(dataDir,'dir'), mkdir(dataDir), end
 
-% Make fmri dir
-mriDir = fullfile(dataDir,'fmri');
+% Make meg dir
+mriDir = fullfile(dataDir,'meg');
 if ~exist(mriDir,'dir'), mkdir(mriDir), end
 
 % Make subject dir
@@ -96,9 +96,9 @@ startKey = KbName('s');
 escKey = KbName('ESCAPE');
 
 % Left hand for sports and right hand for not-sports
-sportsKey1 = KbName('8*'); % Left hand:8*
+sportsKey1 = KbName('1!'); % Left hand:1
 sportsKey2 = KbName('2@'); % Left hand:2@
-notSportsKey1 = KbName('6^'); % Right hand: 6^
+notSportsKey1 = KbName('3#'); % Right hand: 3
 notSportsKey2 = KbName('4$'); % Right hand: 4$
 
 %% Make design for this session
@@ -143,10 +143,11 @@ trial(:,1:3) = squeeze(sessPar(:,runID,:)); % % [onset, class, dur]
 %% Load stimulus and instruction
 % Load stimuli
 stimDir = fullfile(workDir,'stimulus', 'video');
-mvPtr = cell(nStim,1);
+videoPath = cell(nStim,1);
+mvPtr = cell(nStim, 1);
 for t = 1:nStim
-    videoPath = fullfile(stimDir, runClass{t}, runStim{t});
-    mvPtr{t} = Screen('OpenMovie', wptr, videoPath);
+    videoPath{t} = fullfile(stimDir, runClass{t}, runStim{t});
+    mvPtr{t} = Screen('OpenMovie', wptr, videoPath{t});
 end
 
 % Load  instruction
